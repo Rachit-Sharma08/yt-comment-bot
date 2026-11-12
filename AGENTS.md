@@ -56,6 +56,9 @@
   generate karne ke liye LLM API ko comment text jaati hai).
 - **Secrets:** `client_secret.json`, `token.json`, `.env` kabhi commit ya
   print nahi hone chahiye.
+- **Secrets files ko tum KABHI open, read ya cat mat karo** — `.env`,
+  `token.json`, `client_secret.json`. Code unhe load kar sakta hai (jaise
+  `config.py` `.env` padhta hai), par tum unka content nahi dekhoge.
 - **AI reply me jhooth ya jaankari banao mat.** Jawab video se pata na ho to
   bolo ki "dekh ke batata hoon". Abusive / hateful / spam comments par reply
   mat karo.
