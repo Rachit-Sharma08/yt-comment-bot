@@ -11,6 +11,12 @@ load_dotenv()  # .env padh kar values ko os.environ me daal do (abhi .env khali 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")  # primary LLM (Groq) ki key, khali default
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")  # fallback LLM (Gemini) ki key, khali default
 
+# --- LLM model names (official docs se verify kiye — andaza NAHI) ---
+# Groq free/developer plan: https://console.groq.com/docs/rate-limits me listed
+GROQ_MODEL = "openai/gpt-oss-120b"
+# Gemini free tier: https://ai.google.dev/gemini-api/docs/pricing me "Free of charge"
+GEMINI_MODEL = "gemini-3.8-flash"
+
 # --- Bot ka mode (draft/auto ka switch) ---
 # "draft" = reply sirf database me save honge, YouTube par NAHI jayenge (default = safe)
 # "auto"  = reply actually YouTube par post honge (hamesha pehle draft me test karo!)

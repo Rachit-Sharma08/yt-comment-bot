@@ -62,6 +62,12 @@
 - **AI reply me jhooth ya jaankari banao mat.** Jawab video se pata na ho to
   bolo ki "dekh ke batata hoon". Abusive / hateful / spam comments par reply
   mat karo.
+- **LLM kabhi link, phone number, fees ya address khud generate nahi karega.**
+  Ye sab sirf `triggers.json` aur (aage) knowledge file se aayega.
+- **Reply ki language comment ki language jaisi hogi** — Devanagari Hindi ho to
+  Devanagari Hindi, Roman Hinglish ho to Roman Hinglish, English ho to English.
+- **Jo jaankari video context me nahi hai wo andaze se nahi bolni** — na pata
+  ho to comment ki language me bolo ki dekh ke batata hoon.
 
 ## CODING STYLE (mujhe seekhna hai)
 
