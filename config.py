@@ -29,3 +29,25 @@ CHECK_INTERVAL_MIN = 5  # har 5 minute me naye comments check honge
 REPLY_DELAY_MIN_SEC = 20  # do replies ke beech random gap: kam se kam 20 sec
 REPLY_DELAY_MAX_SEC = 60  # aur zyada se zyada 60 sec (random, spam na lage)
 MAX_REPLIES_PER_RUN = 10  # ek run me zyada se zyada 10 replies (quota + spam safety)
+
+# --- filters.py ki lists (rule-based skip ke liye) ---
+# Basic gaali/abuse — Hindi (Roman) + English. Word-boundary se match hoti hai.
+ABUSE_WORDS = [
+    # English
+    "fuck", "fucking", "shit", "bastard", "asshole", "motherfucker",
+    "bitch", "dickhead",
+    # Hindi (Roman me)
+    "chutiya", "chutiye", "bhosdike", "gandu", "gandi", "randi",
+    "bakchod", "haramkhor", "kutta", "kutti", "bewakoof",
+]
+
+# Prompt-injection jaise phrases — agar comment me ho to reply mat karo
+INJECTION_PHRASES = [
+    "ignore previous",
+    "previous instructions",
+    "system prompt",
+    "system message",
+    "instructions bhool",
+    "api key",
+    "disregard previous",
+]
