@@ -1,0 +1,15 @@
+{
+  "allowed_domains": ["zedking.in"],
+  "triggers": [
+    {
+      "id": "link",
+      "video_ids": ["*"],
+      "keywords": ["link", "guide", "लिंक", "गाइड"],
+      "replies": [
+        "ZedKing ki study guide ke liye yahan jao: https://zedking.in/study — sab material ek jagah milega!",
+        "Haan bhai, pura study guide yahan hai: https://zedking.in/study — check kar lo.",
+        "Guide chahiye? Lo official link: https://zedking.in/study — sab kuch isi page par hai."
+      ]
+    }
+  ]
+}
