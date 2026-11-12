@@ -1,0 +1,13 @@
+# Secrets — kabhi commit nahi
+client_secret.json
+token.json
+.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Data + logs
+*.db
+bot.log
