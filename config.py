@@ -15,7 +15,9 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")  # fallback LLM (Gemini) ki key
 # Groq free/developer plan: https://console.groq.com/docs/rate-limits me listed
 GROQ_MODEL = "openai/gpt-oss-120b"
 # Gemini free tier: https://ai.google.dev/gemini-api/docs/pricing me "Free of charge"
-GEMINI_MODEL = "gemini-3.8-flash"
+# Note: gemini-3.8-flash naam sahi hai par test time par 503 (high demand) de raha tha;
+# gemini-3.6-flash (stable, free) verified 200 — isliye fallback ke liye yehi
+GEMINI_MODEL = "gemini-3.6-flash"
 
 # --- Bot ka mode (draft/auto ka switch) ---
 # "draft" = reply sirf database me save honge, YouTube par NAHI jayenge (default = safe)
