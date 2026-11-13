@@ -3,10 +3,11 @@
 # MODE="draft" (default) = YouTube par KUCH post nahi hota — sirf db me save
 
 import logging  # sab activity bot.log me jaayegi (keys kabhi nahi)
-import random  # emoji templates + reply delay dono me random
+import os  # bot.lock banane/mutane ke liye (O_EXCL = ek hi instance)
+import random  # emoji templates + reply delay + loop jitter dono me random
 import sys  # console encoding + exit code
-import time  # reply delay ke liye sleep
-from pathlib import Path  # STOP kill-switch file dhoondne ke liye
+import time  # reply delay aur loop sleep ke liye
+from pathlib import Path  # STOP/lock files dhoondne ke liye
 
 # Windows console cp1252 hai — Devanagari/emoji print karne ke liye UTF-8 chahiye
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -20,6 +21,11 @@ import youtube  # official YouTube Data API calls
 
 # Kill switch: is folder me "STOP" naam ki file ho to post BAND + run turant band
 STOP_FILE = Path(__file__).parent / "STOP"
+
+# Lock file: ek hi instance chale (do bot ek saath reply na karein)
+LOCK_FILE = Path(__file__).parent / "bot.lock"
+# Loop5 min par chalta hai — 30 min kuch na karna = purana instance mar gaya
+LOCK_STALE_SEC = 30 * 60
 
 # --- Logging: sirf bot.log me (file .gitignore me hai) ---
 # comment text 100 char tak hi log hota hai; API keys kabhi log nahi hoti
@@ -50,6 +56,44 @@ def _post_failure(e):
     if "rate" in low and "limit" in low:  # "generate" jaise shabd se false-positive na ho
         return "post_rate", True
     return "post_error", False  # baaki errors — failed save karke aage badho
+
+
+def _acquire_lock():
+    # Ek hi instance chale: O_EXCL se lock banao (maujood ho to bahar)
+    for _ in range(2):  # stale lock par ek baar kabza le kar dobara try
+        try:
+            fd = os.open(str(LOCK_FILE), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.write(fd, str(os.getpid()).encode())  # andar PID — debugging me kaam aayega
+            os.close(fd)
+            return True
+        except FileExistsError:
+            try:
+                age = time.time() - LOCK_FILE.stat().st_mtime
+            except FileNotFoundError:
+                continue  # race me kisi ne delete kar di — dobara banao
+            if age > LOCK_STALE_SEC:
+                # Purana instance 30 min se kuch nahi kar raha = mar chuka — kabza le lo
+                LOCK_FILE.unlink()
+                continue
+            print(f"Ek aur instance chal raha hai (bot.lock {int(age)}s purana) — main nahi chala.")
+            return False
+    return False
+
+
+def _touch_lock():
+    # Har loop iteration me lock ki mtime fresh — mtime stale na lage
+    try:
+        os.utime(str(LOCK_FILE), None)
+    except FileNotFoundError:
+        pass  # lock gayab to koi chheda — agla acquire handle kar lega
+
+
+def _release_lock():
+    # Apna lock mitao — finally me hai isliye Ctrl+C/exception par bhi chhoot jaata hai
+    try:
+        LOCK_FILE.unlink()
+    except FileNotFoundError:
+        pass
 
 
 def run(live=False):
@@ -194,14 +238,60 @@ def run(live=False):
     print(f"Mode                : {config.MODE} | live={live}")
 
 
-if __name__ == "__main__":
-    # --live flag = asli posting on (MODE=auto hone par bhi bina iske post nahi hoga)
-    live = "--live" in sys.argv[1:]
+def loop_mode(live):
+    # Har CHECK_INTERVAL_MIN minute me ek run, +/- 30 sec jitter (pattern na lage)
+    while True:
+        try:
+            if STOP_FILE.exists():
+                print("STOP file mila — loop band.")
+                break
+            if db.quota_used_today() >= config.QUOTA_LIMIT:
+                # Aaj quota khatam — baaki runs SKIP (API call bhi nahi hoti)
+                print(f"Quota {config.QUOTA_LIMIT} paar — aaj ke baaki runs skip.")
+            else:
+                run(live)
+        except Exception:
+            # Ek run fail — log karke agla chalne do (bot kabhi na mare)
+            logger.exception("Loop run fail — agla run chalega")
+            print("Run fail (poora error bot.log me) — agla run chalta rahega.")
+        _touch_lock()  # instance zinda hai — lock ki mtime fresh
+        try:
+            # Interval + jitter: 5 min ± 30 sec
+            time.sleep(config.CHECK_INTERVAL_MIN * 60 + random.uniform(-30, 30))
+        except KeyboardInterrupt:
+            print("\nCtrl+C — loop band.")
+            break
+
+
+def main():
+    args = sys.argv[1:]
+    # Typo pakadne ke liye unknown flag pehle hi rok do
+    unknown = [a for a in args if a not in ("--once", "--loop", "--live")]
+    if unknown:
+        print(f"Unknown flag: {' '.join(unknown)} — options: --once (default), --loop, --live")
+        sys.exit(2)
+    live = "--live" in args  # asli posting ka switch (MODE=auto ke saath bhi chahiye)
+    loop = "--loop" in args  # na ho to ek hi run (--once = default)
+
+    if not _acquire_lock():  # ek hi instance — doosra chala to bahar
+        sys.exit(1)
     try:
-        run(live=live)
+        if loop:
+            loop_mode(live)
+        else:
+            run(live=live)
+    finally:
+        _release_lock()  # Ctrl+C/exception par bhi lock chhoot jaaye (stale na bane)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        # Ctrl+C = saaf band, traceback nahi
+        print("\nCtrl+C — bot saaf band.")
     except Exception as e:
-        # Koi bhi API/quota error — run ruk jaaye par crash traceback na dikhe,
-        # poora details bot.log me safe rehti hain
+        # Koi bhi API/quota error — crash traceback na dikhe, details bot.log me
         logger.exception("Run fail")
         print(f"ERROR: {e}  (poora error bot.log me)")
         sys.exit(1)
