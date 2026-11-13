@@ -48,9 +48,15 @@ def init_db():
 
 
 def already_done(comment_id):
-    # Row pehle se hai (kisi bhi status me) = duplicate, reply mat do
+    """Sirf FINAL statuses = done (posted/skipped/failed). Draft row = NOT done.
+
+    Draft rows har run me dobara process hoti hain — save_reply ka INSERT OR REPLACE
+    usi comment_id ki row ko update karta hai, isliye duplicate row NAHI banti.
+    """
     cur = _db().execute(
-        "SELECT 1 FROM replies WHERE comment_id = ?", (comment_id,)
+        "SELECT 1 FROM replies WHERE comment_id = ? "
+        "AND status IN ('posted', 'skipped', 'failed')",
+        (comment_id,),
     )
     return cur.fetchone() is not None
 
@@ -134,10 +140,17 @@ def recent_replies(limit=20, status=None):
 
 
 if __name__ == "__main__":
-    # Chhota self-check: banao, save karo, padho, mitao (yehi db.py ka test hai)
+    # Chhota self-check: draft = NOT done, posted = done, row ek hi rehti hai
     init_db()
     save_reply("smoke_test", "vid1", "hi", "hello", "draft", "selfcheck")
-    assert already_done("smoke_test"), "save ya already_done toot gaya"
+    assert not already_done("smoke_test"), "draft row ko done nahi hona chahiye"
+    save_reply("smoke_test", "vid1", "hi", "hello2", "posted", "selfcheck")
+    assert already_done("smoke_test"), "posted row done honi chahiye"
+    # Dobara save par PURANI row hi update honi chahiye — duplicate row nahi
+    n = _db().execute(
+        "SELECT COUNT(*) FROM replies WHERE comment_id = 'smoke_test'"
+    ).fetchone()[0]
+    assert n == 1, "duplicate row ban gayi!"
     assert not already_done("no_such_comment"), "false positive"
     _db().execute("DELETE FROM replies WHERE comment_id = 'smoke_test'")
     _db().commit()
