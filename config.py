@@ -41,6 +41,10 @@ REPLY_DELAY_MIN_SEC = 20  # do replies ke beech random gap: kam se kam 20 sec
 REPLY_DELAY_MAX_SEC = 60  # aur zyada se zyada 60 sec (random, spam na lage)
 MAX_REPLIES_PER_RUN = 10  # ek run me zyada se zyada 10 replies (quota + spam safety)
 
+# --- Step 2: LIVE mode (asli posting) ke liye zyada strict limit ---
+# --live flag ke saath sirf 3 replies per run — pehle kam se kam post karke dekho
+MAX_REPLIES_PER_RUN_LIVE = 3
+
 # --- filters.py ki lists (rule-based skip ke liye) ---
 # Basic gaali/abuse — Hindi (Roman) + English. Word-boundary se match hoti hai.
 ABUSE_WORDS = [

@@ -6,6 +6,7 @@ import logging  # sab activity bot.log me jaayegi (keys kabhi nahi)
 import random  # emoji templates + reply delay dono me random
 import sys  # console encoding + exit code
 import time  # reply delay ke liye sleep
+from pathlib import Path  # STOP kill-switch file dhoondne ke liye
 
 # Windows console cp1252 hai — Devanagari/emoji print karne ke liye UTF-8 chahiye
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -16,6 +17,9 @@ import db  # saara database code db.py me
 import filters  # rule-based skip + emoji_kind
 import triggers  # keyword canned replies
 import youtube  # official YouTube Data API calls
+
+# Kill switch: is folder me "STOP" naam ki file ho to post BAND + run turant band
+STOP_FILE = Path(__file__).parent / "STOP"
 
 # --- Logging: sirf bot.log me (file .gitignore me hai) ---
 # comment text 100 char tak hi log hota hai; API keys kabhi log nahi hoti
@@ -35,8 +39,29 @@ def _short(text):
     return (text or "").replace("\n", " ")[:LOG_TEXT_LEN]
 
 
-def run():
+def _post_failure(e):
+    # (reason, stop_run) — 403/quota/rate wale error par run wahin rok do
+    status = getattr(getattr(e, "resp", None), "status", None)
+    if status in (403, 429):  # Google API: quotaExceeded / rateLimitExceeded
+        return f"post_{status}", True
+    low = str(e).lower()
+    if "quota" in low:  # apna QUOTA_LIMIT wala error ya API ka quotaExceeded
+        return "post_quota", True
+    if "rate" in low and "limit" in low:  # "generate" jaise shabd se false-positive na ho
+        return "post_rate", True
+    return "post_error", False  # baaki errors — failed save karke aage badho
+
+
+def run(live=False):
     db.init_db()  # teeno tables banao (pehli baar zaroori)
+
+    # --live flag sirf yahan se set hota hai — youtube.post_reply isi ko dekhta hai
+    youtube.LIVE = live
+
+    # --- Kill switch: STOP file ho to run shuru hi mat ho (ek bhi post nahi) ---
+    if STOP_FILE.exists():
+        print("STOP file mila — run turant band (koi post nahi).")
+        return
 
     # --- 1) Naye comments lao (too_old/already_replied youtube.py khud db me save kar chuka) ---
     comments, fetch_skips = youtube.fetch_new_comments(max_results=50)
@@ -51,6 +76,10 @@ def run():
     posted_this_run = 0  # auto mode: kitne replies abhi post ho chuke
 
     for c in comments:
+        # STOP beech me aa gaya to yahin break — aage koi post nahi hoga
+        if STOP_FILE.exists():
+            print("STOP file mila — run turant band.")
+            break
         text = c["text"]
         short = _short(text)  # 100-char wala version (log + print dono me)
 
@@ -112,7 +141,9 @@ def run():
         # --- 6) Save karo: auto = YouTube par post, draft = sirf db ---
         # (emoji + trigger + llm — teeno ka reply yahin se hokar jaata hai)
         if config.MODE == "auto":
-            if posted_this_run >= config.MAX_REPLIES_PER_RUN:
+            # --live (live mode) = zyada strict limit, warna normal per-run limit
+            limit = config.MAX_REPLIES_PER_RUN_LIVE if live else config.MAX_REPLIES_PER_RUN
+            if posted_this_run >= limit:
                 # Aaj ki limit poori — baaki comments agli run me process honge
                 break
             if posted_this_run > 0:
@@ -123,13 +154,18 @@ def run():
             try:
                 youtube.post_reply(c["comment_id"], reply)
             except Exception as e:
-                # Post fail aur row save NAHI ki to agli baar reply DOBARA chala jaata
-                # (duplicate reply = spam). Isliye failed row zaroor save karo.
-                db.save_reply(c["comment_id"], c["video_id"], text, reply, "failed", "post_error")
+                # Post fail: turant failed row save (warna agli baar reply DOBARA
+                # chala jaata = duplicate = spam). Quota/rate error par run ruk jaata hai.
+                reason, stop_run = _post_failure(e)
+                db.save_reply(c["comment_id"], c["video_id"], text, reply, "failed", reason)
                 counts["failed"] += 1
-                logger.error("POST-FAIL %s: %s", c["comment_id"], e)
-                print(f"[POST-FAIL] {short} | {e}")
+                logger.error("POST-FAIL %s reason=%s: %s", c["comment_id"], reason, e)
+                print(f"[POST-FAIL] ({reason}) {short} | {e}")
+                if stop_run:
+                    print("Quota/rate error — run yahin rok diya.")
+                    break
                 continue
+            # Post hone ke baad TURANT db me "posted" save (crash ho to record rahe)
             db.save_reply(c["comment_id"], c["video_id"], text, reply, "posted", source)
             counts["posted"] += 1
             posted_this_run += 1
@@ -155,12 +191,14 @@ def run():
     print(f"Posted (auto mode)  : {counts['posted']}")
     print(f"Failed              : {counts['failed']}")
     print(f"Quota aaj           : {db.quota_used_today()}/{config.QUOTA_LIMIT} units")
-    print(f"Mode                : {config.MODE}")
+    print(f"Mode                : {config.MODE} | live={live}")
 
 
 if __name__ == "__main__":
+    # --live flag = asli posting on (MODE=auto hone par bhi bina iske post nahi hoga)
+    live = "--live" in sys.argv[1:]
     try:
-        run()
+        run(live=live)
     except Exception as e:
         # Koi bhi API/quota error — run ruk jaaye par crash traceback na dikhe,
         # poora details bot.log me safe rehti hain

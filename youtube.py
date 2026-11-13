@@ -39,6 +39,10 @@ INSERT_COST = 50  # reply post = 50 units — mehnga hai, isliye limit zaroori
 # Service ek hi banegi (baar-baar build = faltu ka kaam)
 _service = None
 
+# --live flag (main.py set karta hai). Bina --live ke post_reply KABHI nahi chalega —
+# MODE=auto hone ka matlab nahi ki bot bina explicit permission ke post kare.
+LIVE = False
+
 
 def save_token(creds):
     # Token ko file me save karo — print NAHI, sirf file me
@@ -196,12 +200,14 @@ def get_video_notes(video_id):
 
 
 def post_reply(parent_comment_id, text):
-    """comment par reply post karo. Sirf MODE=="auto" — warna error (fail-safe)."""
-    # Fail-safe: draft mode me ye function chalega hi nahi — galat call par turant error
+    """comment par reply post karo. Sirf MODE=="auto" + --live flag — warna error."""
+    # Double fail-safe: draft mode YA --live flag na ho to turant error (post kabhi nahi)
     if config.MODE != "auto":
         raise RuntimeError(
             f"post_reply sirf MODE=auto me chalta hai (abhi MODE={config.MODE!r})"
         )
+    if not LIVE:
+        raise RuntimeError("post_reply ke liye --live flag chahiye (abhi band hai)")
 
     yt = get_service()
     _ensure_quota(INSERT_COST)  # 50 units — pehle check, warna limit toot jaati hai

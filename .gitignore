@@ -11,3 +11,5 @@ __pycache__/
 # Data + logs
 *.db
 bot.log
+STOP
+bot.lock
