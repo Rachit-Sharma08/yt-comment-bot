@@ -38,12 +38,14 @@ def _short(text):
 def run():
     db.init_db()  # teeno tables banao (pehli baar zaroori)
 
-    # --- 1) Naye comments lao (latest pehle; duplicates/own-channel youtube.py khud hataata hai) ---
-    comments = youtube.fetch_new_comments(max_results=50)
-    print(f"Comments mile: {len(comments)}")
+    # --- 1) Naye comments lao (too_old/already_replied youtube.py khud db me save kar chuka) ---
+    comments, fetch_skips = youtube.fetch_new_comments(max_results=50)
+    skips = dict(fetch_skips)  # is run ke saare skip reasons isi dict me count hote hain
+    total_seen = len(comments) + sum(fetch_skips.values())  # API se kitne naye mile
+    print(f"Comments mile: {total_seen} "
+          f"({len(comments)} process + {sum(fetch_skips.values())} pehle se skip)")
     if not comments:
-        print("Koi naya comment nahi mila — is run me karne ko kuch nahi.")
-        return
+        print("Koi naya comment nahi mila jo process karne layak ho.")
 
     counts = {"emoji": 0, "trigger": 0, "llm": 0, "draft": 0, "posted": 0, "failed": 0}
     posted_this_run = 0  # auto mode: kitne replies abhi post ho chuke
@@ -58,6 +60,7 @@ def run():
             # Daily cap: aaj ke itne emoji replies ho chuke to aage skip
             if db.emoji_replies_today() >= config.MAX_EMOJI_REPLIES_PER_DAY:
                 db.save_reply(c["comment_id"], c["video_id"], text, "", "skipped", "emoji_cap")
+                skips["emoji_cap"] = skips.get("emoji_cap", 0) + 1
                 logger.info("SKIP %s reason=emoji_cap text=%s", c["comment_id"], short)
                 print(f"[SKIP] (emoji_cap) {short}")
                 continue
@@ -69,6 +72,7 @@ def run():
             # Hate wala emoji ya pehchana nahi — safe side par skip, reply NAHI
             reason = "negative_emoji" if kind == "negative" else "unknown_emoji"
             db.save_reply(c["comment_id"], c["video_id"], text, "", "skipped", reason)
+            skips[reason] = skips.get(reason, 0) + 1
             logger.info("SKIP %s reason=%s text=%s", c["comment_id"], reason, short)
             print(f"[SKIP] ({reason}) {short}")
             continue
@@ -78,6 +82,7 @@ def run():
             if skip:
                 # db me "skipped" + reason save — agli baar ye comment dobara na aaye
                 db.save_reply(c["comment_id"], c["video_id"], text, "", "skipped", reason)
+                skips[reason] = skips.get(reason, 0) + 1
                 logger.info("SKIP %s reason=%s text=%s", c["comment_id"], reason, short)
                 print(f"[SKIP] ({reason}) {short}")
                 continue
@@ -137,9 +142,12 @@ def run():
             logger.info("DRAFT %s via=%s text=%s", c["comment_id"], source, short)
             print(f"[DRAFT/{source}] {short} -> {reply}")
 
-    # --- Summary: is run me kya-kya hua ---
+    # --- Summary: is run me kya-kya hua (too_old/already_replied bhi yahin) ---
     print("\n=== SUMMARY ===")
-    print(f"Comments mile       : {len(comments)}")
+    print(f"Comments mile (naye) : {total_seen}")
+    print(f"  process hue        : {len(comments)}")
+    for k in sorted(skips):
+        print(f"  skip {k:16}: {skips[k]}")
     print(f"Emoji canned        : {counts['emoji']}")
     print(f"Trigger replies     : {counts['trigger']}")
     print(f"LLM replies         : {counts['llm']}")

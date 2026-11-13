@@ -31,6 +31,10 @@ MODE = os.getenv("MODE", "draft")  # default "draft"
 # taaki channel ka quota khatam na ho.
 QUOTA_LIMIT = 8000  # aaj ke ye units upar nahi jaayenge
 
+# --- Step 1: purane comments ka cutoff ---
+# 24h se zyada purane top-level comments par reply NAHI — sirf fresh conversation pakdo
+MAX_COMMENT_AGE_HOURS = 24
+
 # --- Timing aur limits (spam policy ke hisaab se — AGENTS.md POLICY RULES) ---
 CHECK_INTERVAL_MIN = 5  # har 5 minute me naye comments check honge
 REPLY_DELAY_MIN_SEC = 20  # do replies ke beech random gap: kam se kam 20 sec

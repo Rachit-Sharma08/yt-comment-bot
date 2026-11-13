@@ -18,6 +18,7 @@ def _ipv4_only(*args, **kwargs):
 socket.getaddrinfo = _ipv4_only  # ab process me sab IPv4 se hi connect karenge
 
 import os  # token.json exist check ke liye
+from datetime import datetime, timezone  # comment ki age (purana/naya) nikalne ke liye
 from pathlib import Path  # video_notes/<video_id>.md padhne ke liye
 
 from google.auth.transport.requests import Request  # expired token ko refresh karne ke liye
@@ -94,10 +95,23 @@ def get_my_channel_id():
     return items[0]["id"]
 
 
-def fetch_new_comments(max_results=50):
-    """Naye comments list karo (latest pehle), sirf unhe jo abhi tak pending hain.
+def _is_too_old(published_at):
+    # publishedAt = "2026-11-13T08:30:00Z" (UTC). MAX_COMMENT_AGE_HOURS se purana = skip
+    try:
+        when = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+    except ValueError:
+        return False  # date parse na ho to fresh maano (galat tarike se reply rokna nahi)
+    age_hours = (datetime.now(timezone.utc) - when).total_seconds() / 3600
+    return age_hours > config.MAX_COMMENT_AGE_HOURS
 
-    Returns: [{"comment_id", "video_id", "author", "author_channel_id", "text"}, ...]
+
+def fetch_new_comments(max_results=50):
+    """Naye comments list karo (latest pehle) — sirf wo jo actually process karne hain.
+
+    Returns: (comments, skips)
+      comments = [{"comment_id", "video_id", "author", "author_channel_id", "text"}, ...]
+      skips    = {"too_old": n, "already_replied": n} — inhe db me "skipped" save
+                 kar chuka hoon (duplicate rokne ke liye), main.py sirf count dikhaye.
     """
     yt = get_service()
     channel_id = get_my_channel_id()  # apne channel ke comments filter karne ke liye
@@ -111,10 +125,13 @@ def fetch_new_comments(max_results=50):
     ).execute()
     db.add_quota(LIST_COST)  # list = 1 unit
 
-    out = []
+    comments = []
+    skips = {}
     for item in resp.get("items", []):
         top = item["snippet"]["topLevelComment"]["snippet"]  # thread ka top-level comment
         comment_id = item["id"]  # isi par baad me reply post hoga
+        video_id = item["snippet"]["videoId"]  # kis video par comment hai
+        text = top.get("textOriginal", "")  # poora text (filter isi par chalega)
 
         # Duplicate: db me pehle se save hai (kisi bhi status me) to chhod do
         if db.already_done(comment_id):
@@ -125,14 +142,27 @@ def fetch_new_comments(max_results=50):
         if author_channel_id == channel_id:
             continue
 
-        out.append({
+        # Purana comment (24h se zyada) — reply nahi, db me "skipped/too_old"
+        if _is_too_old(top.get("publishedAt", "")):
+            db.save_reply(comment_id, video_id, text, "", "skipped", "too_old")
+            skips["too_old"] = skips.get("too_old", 0) + 1
+            continue
+
+        # Thread me pehle se kisi ne reply ki (totalReplyCount > 0) —
+        # discussion chal rahi hai, beech me mat chuo. db me "skipped/already_replied"
+        if item["snippet"].get("totalReplyCount", 0) > 0:
+            db.save_reply(comment_id, video_id, text, "", "skipped", "already_replied")
+            skips["already_replied"] = skips.get("already_replied", 0) + 1
+            continue
+
+        comments.append({
             "comment_id": comment_id,
-            "video_id": item["snippet"]["videoId"],  # kis video par comment hai
+            "video_id": video_id,
             "author": top.get("authorDisplayName", ""),
             "author_channel_id": author_channel_id,
-            "text": top.get("textOriginal", ""),  # poora text (filter isi par chalega)
+            "text": text,
         })
-    return out
+    return comments, skips
 
 
 def get_video_info(video_id):
