@@ -58,3 +58,32 @@ INJECTION_PHRASES = [
     "api key",
     "disregard previous",
 ]
+
+# --- Step 0: Emoji comments ka canned reply (LLM BILKUL nahi lagta) ---
+# Sirf "sirf emoji" wale comments par chalega — text wale par filters/triggers/LLM
+POSITIVE_EMOJIS = [
+    "👍", "👌", "🔥", "❤️", "😂", "😍", "🙏",
+    "🎉", "💯", "😊", "⭐", "👏",
+    # Skin-tone modifiers — inke bina "👍🏻" unknown ho jaata tha
+    "🏻", "🏼", "🏽", "🏾", "🏿",
+]
+
+# Negative/hate wale emoji — in par kabhi reply nahi (skip)
+NEGATIVE_EMOJIS = ["👎", "😡", "🤬", "😠", "😢", "😭", "🤮", "😒", "🙄"]
+
+# {e} = viewer ka apna emoji (comment wapas bhejta hai). Har reply alag lage — random chunta hai.
+EMOJI_REPLY_TEMPLATES = [
+    "Shukriya! {e}",
+    "Thanks yaar {e}",
+    "Bahut achha laga ki pasand aaya {e}",
+    "Glad you liked it! {e}",
+    "Thanks for the love {e}",
+    "Dhanyavaad {e}",
+    "You made my day {e}",
+    "Kya baat hai — shukriya {e}",
+    "Appreciate it! {e}",
+    "Har emoji ka support chahiye, thanks {e}",
+]
+
+# Roz zyada se zyada itne emoji replies (spam policy: ek jaisa reply repeat na lage)
+MAX_EMOJI_REPLIES_PER_DAY = 40

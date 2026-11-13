@@ -1,9 +1,9 @@
-# main.py — bot ka EK RUN (loop nahi): naye comments -> filters -> triggers -> LLM -> save/post
+# main.py — bot ka EK RUN (loop nahi): naye comments -> emoji/filters -> triggers -> LLM -> save/post
 # Chalao: venv\Scripts\python.exe main.py
 # MODE="draft" (default) = YouTube par KUCH post nahi hota — sirf db me save
 
 import logging  # sab activity bot.log me jaayegi (keys kabhi nahi)
-import random  # replies ke beech random delay (spam policy)
+import random  # emoji templates + reply delay dono me random
 import sys  # console encoding + exit code
 import time  # reply delay ke liye sleep
 
@@ -11,9 +11,9 @@ import time  # reply delay ke liye sleep
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 import ai  # LLM reply (Groq -> Gemini fallback)
-import config  # MODE, delays, limits
+import config  # MODE, delays, limits, emoji lists
 import db  # saara database code db.py me
-import filters  # rule-based skip
+import filters  # rule-based skip + emoji_kind
 import triggers  # keyword canned replies
 import youtube  # official YouTube Data API calls
 
@@ -45,46 +45,67 @@ def run():
         print("Koi naya comment nahi mila — is run me karne ko kuch nahi.")
         return
 
-    counts = {"skip": 0, "trigger": 0, "llm": 0, "draft": 0, "posted": 0, "failed": 0}
+    counts = {"emoji": 0, "trigger": 0, "llm": 0, "draft": 0, "posted": 0, "failed": 0}
     posted_this_run = 0  # auto mode: kitne replies abhi post ho chuke
 
     for c in comments:
         text = c["text"]
         short = _short(text)  # 100-char wala version (log + print dono me)
 
-        # --- 2) Rule-based skip — SABSE PEHLE, LLM bilkul nahi chalega ---
-        skip, reason = filters.should_skip(text)
-        if skip:
-            # db me "skipped" + reason save — agli baar ye comment dobara na aaye
+        # --- 2a) Emoji-only comment — LLM nahi, seedha template reply (Step 0) ---
+        kind = filters.emoji_kind(text)
+        if kind == "positive":
+            # Daily cap: aaj ke itne emoji replies ho chuke to aage skip
+            if db.emoji_replies_today() >= config.MAX_EMOJI_REPLIES_PER_DAY:
+                db.save_reply(c["comment_id"], c["video_id"], text, "", "skipped", "emoji_cap")
+                logger.info("SKIP %s reason=emoji_cap text=%s", c["comment_id"], short)
+                print(f"[SKIP] (emoji_cap) {short}")
+                continue
+            # Template me {e} = viewer ka apna emoji wapas; random template se variety
+            reply = random.choice(config.EMOJI_REPLY_TEMPLATES).format(e=text.strip())
+            source = "emoji"
+            counts["emoji"] += 1
+        elif kind in ("negative", "unknown"):
+            # Hate wala emoji ya pehchana nahi — safe side par skip, reply NAHI
+            reason = "negative_emoji" if kind == "negative" else "unknown_emoji"
             db.save_reply(c["comment_id"], c["video_id"], text, "", "skipped", reason)
-            counts["skip"] += 1
             logger.info("SKIP %s reason=%s text=%s", c["comment_id"], reason, short)
             print(f"[SKIP] ({reason}) {short}")
             continue
-
-        # --- 3) Keyword trigger — canned reply mila to LLM ki zarurat hi nahi ---
-        # (trigger replies par URL/phone validator NAHI lagta — sirf LLM reply par ai.py me lagta hai)
-        reply = triggers.match_trigger(c["video_id"], text)
-        source = "trigger"
-        if reply:
-            counts["trigger"] += 1
         else:
-            # --- 4) LLM path: video info (cache-first) + notes file se context ---
-            title, description = youtube.get_video_info(c["video_id"])
-            notes = youtube.get_video_notes(c["video_id"])  # video_notes/<id>.md ho to
-            context = (description + "\n\n" + notes).strip()  # dono ka combination
-            reply = ai.make_reply(title, context, text)  # validation andar hi hoti hai
-            source = "llm"
-            if reply is None:
-                # --- 5) LLM fail / validation fail -> status "failed" ---
-                db.save_reply(c["comment_id"], c["video_id"], text, "", "failed", "llm_fail")
-                counts["failed"] += 1
-                logger.warning("FAILED %s text=%s", c["comment_id"], short)
-                print(f"[FAILED] {short}")
+            # --- 2b) Rule-based skip — emoji-only NAHI hai to yahan (empty/abusive/url/injection) ---
+            skip, reason = filters.should_skip(text)
+            if skip:
+                # db me "skipped" + reason save — agli baar ye comment dobara na aaye
+                db.save_reply(c["comment_id"], c["video_id"], text, "", "skipped", reason)
+                logger.info("SKIP %s reason=%s text=%s", c["comment_id"], reason, short)
+                print(f"[SKIP] ({reason}) {short}")
                 continue
-            counts["llm"] += 1
+
+            # --- 3) Keyword trigger — canned reply mila to LLM ki zarurat hi nahi ---
+            # (trigger replies par URL/phone validator NAHI lagta — sirf LLM reply par ai.py me lagta hai)
+            reply = triggers.match_trigger(c["video_id"], text)
+            source = "trigger"
+            if reply:
+                counts["trigger"] += 1
+            else:
+                # --- 4) LLM path: video info (cache-first) + notes file se context ---
+                title, description = youtube.get_video_info(c["video_id"])
+                notes = youtube.get_video_notes(c["video_id"])  # video_notes/<id>.md ho to
+                context = (description + "\n\n" + notes).strip()  # dono ka combination
+                reply = ai.make_reply(title, context, text)  # validation andar hi hoti hai
+                source = "llm"
+                if reply is None:
+                    # --- 5) LLM fail / validation fail -> status "failed" ---
+                    db.save_reply(c["comment_id"], c["video_id"], text, "", "failed", "llm_fail")
+                    counts["failed"] += 1
+                    logger.warning("FAILED %s text=%s", c["comment_id"], short)
+                    print(f"[FAILED] {short}")
+                    continue
+                counts["llm"] += 1
 
         # --- 6) Save karo: auto = YouTube par post, draft = sirf db ---
+        # (emoji + trigger + llm — teeno ka reply yahin se hokar jaata hai)
         if config.MODE == "auto":
             if posted_this_run >= config.MAX_REPLIES_PER_RUN:
                 # Aaj ki limit poori — baaki comments agli run me process honge
@@ -119,7 +140,7 @@ def run():
     # --- Summary: is run me kya-kya hua ---
     print("\n=== SUMMARY ===")
     print(f"Comments mile       : {len(comments)}")
-    print(f"Skip (filters)      : {counts['skip']}")
+    print(f"Emoji canned        : {counts['emoji']}")
     print(f"Trigger replies     : {counts['trigger']}")
     print(f"LLM replies         : {counts['llm']}")
     print(f"Draft save (draft)  : {counts['draft']}")

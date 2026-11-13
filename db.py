@@ -104,6 +104,17 @@ def quota_used_today():
     return row[0] if row else 0
 
 
+def emoji_replies_today():
+    # Aaj kitne emoji-canned replies ban chuke (draft ya posted) — daily cap isi se
+    # created_at UTC hai (SQLite datetime('now')), isliye date('now') se sahi match hoga
+    row = _db().execute(
+        "SELECT COUNT(*) FROM replies "
+        "WHERE reason = 'emoji' AND status IN ('draft', 'posted') "
+        "AND date(created_at) = date('now')"
+    ).fetchone()
+    return row[0]
+
+
 if __name__ == "__main__":
     # Chhota self-check: banao, save karo, padho, mitao (yehi db.py ka test hai)
     init_db()
