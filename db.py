@@ -115,6 +115,24 @@ def emoji_replies_today():
     return row[0]
 
 
+def recent_replies(limit=20, status=None):
+    # review.py ke liye: latest rows (status diya ho to sirf wahi, jaise "draft")
+    # ORDER BY created_at DESC + rowid — same second ki rows ka order bhi stable rahe
+    if status:
+        cur = _db().execute(
+            "SELECT created_at, status, reason, comment, reply FROM replies "
+            "WHERE status = ? ORDER BY created_at DESC, rowid DESC LIMIT ?",
+            (status, limit),
+        )
+    else:
+        cur = _db().execute(
+            "SELECT created_at, status, reason, comment, reply FROM replies "
+            "ORDER BY created_at DESC, rowid DESC LIMIT ?",
+            (limit,),
+        )
+    return cur.fetchall()
+
+
 if __name__ == "__main__":
     # Chhota self-check: banao, save karo, padho, mitao (yehi db.py ka test hai)
     init_db()
