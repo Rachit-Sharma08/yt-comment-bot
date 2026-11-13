@@ -73,6 +73,11 @@ def should_skip(comment_text):
         if re.search(r"\b" + re.escape(word) + r"\b", low):
             return True, "abusive"
 
+    # 5) Criticism/scam ke shabd (config.py ki ALAG list) — polite reply bhi nahi
+    for word in config.CRITICISM_WORDS:
+        if re.search(r"\b" + re.escape(word) + r"\b", low):
+            return True, "criticism"
+
     return False, ""  # reply karo — koi dikkat nahi
 
 
@@ -87,4 +92,7 @@ if __name__ == "__main__":
     assert emoji_kind("!!!") == ""  # emoji nahi
     assert should_skip("   ")[0] and should_skip("   ")[1] == "empty"
     assert should_skip("chutiya") == (True, "abusive")
+    assert should_skip("bkwwas") == (True, "criticism")
+    assert should_skip("This scam video") == (True, "criticism")  # case-insensitive
+    assert should_skip("nice video")[0] is False  # normal comment skip NAHI
     print("filters self-check PASS")

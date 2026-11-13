@@ -95,3 +95,10 @@ EMOJI_REPLY_TEMPLATES = [
 
 # Roz zyada se zyada itne emoji replies (spam policy: ek jaisa reply repeat na lage)
 MAX_EMOJI_REPLIES_PER_DAY = 40
+
+# --- Criticism / scam wale comments — inka reply BILKUL nahi (abusive list se ALAG) ---
+# Gaali (ABUSE_WORDS) yahan NAHI hai — yahan sirf tareef-negative, waste, fraud ke shabd
+CRITICISM_WORDS = [
+    "bkwwas", "bakwaas", "bakwas", "bekar", "bekaar", "ghatiya",
+    "waste", "worst", "fake", "boring", "useless", "stupid", "fraud", "scam",
+]
