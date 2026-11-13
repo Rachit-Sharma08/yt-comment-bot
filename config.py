@@ -26,6 +26,11 @@ GEMINI_MODEL = "gemini-3.6-flash"
 # koi bhi value jo "auto" na ho, draft hi treat hogi.
 MODE = os.getenv("MODE", "draft")  # default "draft"
 
+# --- YouTube API quota (AGENTS.md: daily limit 10,000 units) ---
+# list call = 1 unit, reply post = 50 units. 8000 par bot khud rok jaayega
+# taaki channel ka quota khatam na ho.
+QUOTA_LIMIT = 8000  # aaj ke ye units upar nahi jaayenge
+
 # --- Timing aur limits (spam policy ke hisaab se — AGENTS.md POLICY RULES) ---
 CHECK_INTERVAL_MIN = 5  # har 5 minute me naye comments check honge
 REPLY_DELAY_MIN_SEC = 20  # do replies ke beech random gap: kam se kam 20 sec
