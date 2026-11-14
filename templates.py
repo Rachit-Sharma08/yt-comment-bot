@@ -54,16 +54,18 @@ def link_line(language, url):
     return random.choice(variants).format(url=url)
 
 
-def contact_reply(language, phone, address, url, with_phone=True, with_link=True):
+def contact_reply(language, phone, address, url, with_phone=True, with_link=True,
+                  with_address=True):
     """Step 4 — address/admission/contact intent: phone + address + admission link.
 
     Jo part allowed hai (cap ke hisaab se) wahi lagta hai — max ek link.
+    with_address=False → chhota variant (280 char limit me address nahi samata)
     """
     parts = config.CONTACT_REPLY_PARTS.get(language) or config.CONTACT_REPLY_PARTS[FALLBACK_LANG]
     out = []
     if with_phone and phone:
         out.append(random.choice(parts["phone"]).format(phone=phone))
-    if address:
+    if with_address and address:
         out.append(random.choice(parts["address"]).format(address=address))
     if with_link and url:
         out.append(random.choice(parts["link"]).format(url=url))

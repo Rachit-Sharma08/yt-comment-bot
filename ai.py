@@ -59,6 +59,10 @@ def _detect_language(text):
         "kyu", "yaar", "batao", "bata", "karo", "tum", "aap", "mujhe",
         "tumhe", "bata", "dekh", "kitna", "kab", "kaise",
         "ki", "ka", "ke", "ye", "wo", "aur", "kitne", "kitni",
+        # Hinglish ke aur markers — reply bhi Hinglish me ho to sahi detect ho
+        "hain", "liye", "mein", "chahiye", "karein", "karte", "karna",
+        "kaisa", "pata", "sampark", "waqt", "kuch", "chal", "raha",
+        "rahi", "karna", "kar", "mat", "abhi", "jaldi", "sirf",
     }
     words = set(re.findall(r"[a-z']+", text.lower()))
     if words & hinglish_markers:  # intersection khaali nahi = Hinglish mila
@@ -745,15 +749,30 @@ def answer_institute(comment, chunks):
         url = knowledge.admission_url()
         with_phone = bool(phone) and _contact_allowed()
         with_link = bool(url) and config.LINK_IN_COURSE_REPLIES and _link_allowed()
-        extra = templates.contact_reply(
+        reply = _clean_contact_part(reply)
+        # Poora contact block (phone + address + link)
+        full = templates.contact_reply(
             language, phone, address, url,
             with_phone=with_phone, with_link=with_link,
         )
-        reply = _clean_contact_part(reply)
-        if len(reply) + 1 + len(extra) <= config.MAX_INSTITUTE_REPLY_CHARS:
-            reply = (reply + " " + extra).strip()
+        # Chhota variant (address chhod kar) — LLM part ke saath fit ho
+        short_extra = templates.contact_reply(
+            language, phone, address, url,
+            with_phone=with_phone, with_link=with_link, with_address=False,
+        )
+        if len(reply) + 1 + len(full) <= config.MAX_INSTITUTE_REPLY_CHARS:
+            # Address + phone + link sab (spec: address intent me 3 cheezein)
+            reply = (reply + " " + full).strip()
+        elif len(reply) + 1 + len(short_extra) <= config.MAX_INSTITUTE_REPLY_CHARS:
+            reply = (reply + " " + short_extra).strip()
         else:
-            reply = extra
+            # LLM part bada hai — ek baar short version maango (facts ke saath)
+            shorter = _shorten_reply(reply, comment)
+            shorter = _clean_contact_part(shorter) if shorter else ""
+            if shorter and len(shorter) + 1 + len(short_extra) <= config.MAX_INSTITUTE_REPLY_CHARS:
+                reply = (shorter + " " + short_extra).strip()
+            else:
+                reply = full
         logger.info("contact extras jode (phone=%s link=%s)", with_phone, with_link)
         ok, why = _check_links(reply)
         if not ok:

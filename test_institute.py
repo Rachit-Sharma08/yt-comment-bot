@@ -1,6 +1,8 @@
 # test_institute.py — institute pipeline ka test: label + chunks + reply
 # YouTube par KUCH post nahi (draft only, koi DB save ya API call nahi).
 # LLM call hoti hai (label + reply) — keys .env se aati hain.
+# IMPORTANT: reply pipeline.py.handle_comment() se aata hai — wahi path jo
+# main.py use karta hai (Step 6). Isliye test aur production hamesha same.
 # Chalao: venv\Scripts\python.exe test_institute.py
 
 import logging
@@ -8,10 +10,10 @@ import re  # no_fee / markdown / fee checks ke liye
 import sys
 import time  # cases ke beech delay — Groq/Gemini free tier rate-limit (429) se bachne ke liye
 
-import ai  # answer_institute + make_reply
+import ai  # _detect_language (reply ka language check ke liye)
 import db  # contact cap ke liye table chahiye
-import intent  # classify_comment
 import knowledge  # load_chunks + search + short_name
+import pipeline  # comment -> reply ka shared path (main.py bhi yahi use karta hai)
 
 # Windows console cp1252 hai — Devanagari/emoji print karne ke liye UTF-8 chahiye
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -19,17 +21,17 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 # Warnings dikhao (discard/fail ka log) — keys kabhi print nahi hongi
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 
-# Dummy video context — institute sawaal par video context ki zarurat nahi,
-# baaki labels (praise/other) ko main.py ke LLM path jaisa context chahiye
+# Dummy video context — normal (non-institute) path me istemal hota hai
 DUMMY_CONTEXT = "Sample video: daily vlog about computers and courses."
 
-# 5 test cases (spec Step 6 ke hisaab se)
+# Test cases (spec Step 7 ke 3 cases + pehle wale 2)
 CASES = [
-    "Zedking digital marketing ki fees ?",  # (1) gate BLOCKED -> clarification, fee NAHI
-    "Zedking ccc course ki fees?",  # (2) exact course -> fee DENI hai (Rs 6,000)
-    "AI digital pro ki fees kitni hai?",  # (3) exact course -> fee DENI hai (Rs 35,000)
-    "Aap konse institute padhte ho ?",  # (4) personal_question -> SKIP
-    "Tally course kitne mahine ka hai?",  # (5) gate BLOCKED -> clarification, duration NAHI
+    "Zedking digital marketing ki fees ?",  # clarification (DMA ya AI Digital Pro)
+    "Zedking ccc course ki fees?",  # exact course -> fee + course link
+    "CCC course ki fees kitni hai aur admission",  # fee + admission intent
+    "AI digital pro ki fees kitni hai?",  # exact course -> fee + course link
+    "Aap konse institute padhte ho ?",  # personal_question -> SKIP
+    "Tally course kitne mahine ka hai?",  # clarification
 ]
 
 # Expected results — comment ke ek hisse se match hote hain
@@ -41,6 +43,9 @@ EXPECT = {
         "no_fee": True,
     },
     "Zedking ccc course ki fees": {
+        "label": "institute_info", "reply": True, "fee": True,
+    },
+    "CCC course ki fees kitni hai aur admission": {
         "label": "institute_info", "reply": True, "fee": True,
     },
     "AI digital pro ki fees kitni hai": {
@@ -55,7 +60,7 @@ EXPECT = {
 }
 
 # Reply me markdown bacha hona chahiye — heading/bullet line-start, bold,
-# backtick, link, italic pairs. (Spec Step 1+6: plain text reply)
+# backtick, link, italic pairs. (Spec Step 1+7: plain text reply)
 _MD_LEFT_RE = re.compile(
     r"(?m)^\s*(?:#|[-*])\s"  # line-start heading ya bullet
     r"|\*\*|__"  # bold markers
@@ -91,27 +96,27 @@ def _has_fee(reply):
     return False
 
 
+def _links(reply):
+    """Reply me kitne links hain (spec Step 4: max ek link)."""
+    return re.findall(r"(?i)https?://[^\s]+", reply)
+
+
 def run_case(comment):
-    """Ek comment par pipeline chala kar (label, reply, chunks) return karo."""
-    # 0) DB init — contact cap (_contact_allowed) ko table chahiye
-    db.init_db()
+    """Ek comment par pipeline chala kar (label, reply, chunks, path) return karo.
 
-    # 1) Intent label (rules pehle, LLM fallback)
-    label = intent.classify_comment(comment, "")
+    Wahi pipeline.handle_comment() jo main.py use karta hai — isliye test aur
+    production ka reply hamesha same (Step 6).
+    """
+    db.init_db()  # contact cap (_contact_allowed) ko table chahiye
 
-    # 2) criticism/spam/personal = koi reply nahi (main.py ke jaisa)
-    if label in ("criticism", "spam", "personal_question"):
-        return label, None, [], f"skip ({label} par reply nahi)"
-
-    # 3) Institute sawaal = knowledge chunks se answer_institute
-    if label == "institute_info":
-        chunks = knowledge.search(comment, top_k=3)
-        reply = ai.answer_institute(comment, chunks)
-        return label, reply, chunks, "institute (knowledge)"
-
-    # 4) Baaki labels = normal LLM path (main.py ke jaisa, dummy context)
-    reply = ai.make_reply("Test Video", DUMMY_CONTEXT, comment)
-    return label, reply, [], "normal (LLM make_reply)"
+    label, reply, chunks, reason = pipeline.handle_comment(
+        comment,
+        video_ctx=lambda: ("Test Video", DUMMY_CONTEXT),
+        institute_enabled=True,
+    )
+    if reason:
+        return label, None, chunks, f"skip ({reason})"
+    return label, reply, chunks, "institute (knowledge)"
 
 
 def main():
@@ -153,6 +158,8 @@ def main():
             print("    REPLY : None (skip/discard/fail — upar reason dikhta hai)")
         else:
             print(f"    REPLY : {reply}")
+            print(f"    LEN   : {len(reply)} chars, {reply.count(chr(10)) + 1} line(s), "
+                  f"{len(_links(reply))} link(s)")
 
         # --- Expected results check (sirf naye cases EXPECT me hain) ---
         exp = next((e for key, e in EXPECT.items() if key in comment), None)
@@ -170,9 +177,14 @@ def main():
                 results.append((i, "no fee number", _no_fee(reply)))
             if exp.get("fee") and reply:
                 results.append((i, "fee number present", _has_fee(reply)))
-        # Spec Step 1+6: har reply plain text — koi markdown bacha nahi hona chahiye
+        # Spec Step 1+7: har reply plain text — koi markdown bacha nahi hona chahiye
         if reply:
             results.append((i, "no markdown in reply", not _has_markdown(reply)))
+            # Spec Step 4: max ek link per reply
+            results.append((i, "max 1 link", len(_links(reply)) <= 1))
+            # Spec Step 5: 280 char + 3 line limit
+            results.append((i, "within 280 chars / 3 lines",
+                            len(reply) <= 280 and reply.count("\n") <= 2))
         print()
         time.sleep(8)  # cases ke beech gap — free tier ke 429 se bachne ke liye
 
