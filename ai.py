@@ -21,6 +21,15 @@ _URL_RE = re.compile(r"(?i)https?://|www\.|\b[\w-]+\.(?:com|in|xyz|net|org|io|me
 _PHONE_RE = re.compile(r"(?:\+91[\s-]?)?\b[6-9]\d{9}\b|\b\d{10}\b")  # Indian mobile ya 10 digit
 _SECRET_RE = re.compile(r"(?i)\bsk-[a-z0-9]{10,}\b|api[\s-]?key|bearer\s|password")
 
+# Personal-identity claims — bot pehle person me apne baare me nahi bolega (AGENTS rule)
+# "main padh / mai padh / I study / I am a student / मैं पढ़" jaise phrases = discard
+_PERSONAL_CLAIM_RE = re.compile(
+    r"(?i)\b(?:main|mai|i)\s+(?:padh\w*|student|study)\b"
+    r"|\bi(?:'|\u2019)?m\s+(?:a\s+)?student\b"
+    r"|\bi\s+am\s+(?:a\s+)?student\b"
+    r"|\u092e\u0948\u0902\s+\u092a\u0922\u093c"  # मैं पढ़
+)
+
 # Address ke clear markers — reply me ye dikhe to chunk me bhi hona chahiye
 _ADDR_WORDS = [
     "road", "colony", "chowk", "near", "opp", "bus stand", "haryana",
@@ -31,17 +40,20 @@ _ADDR_WORDS = [
 
 def _detect_language(text):
     # Comment ki language/script detect karo — reply usi me honi chahiye
+    # Short label return hota hai: prompt me "Reply language: Roman Hinglish" dikhta hai
     if re.search(r"[\u0900-\u097F]", text):  # Devanagari range = Hindi script
-        return "Hindi in Devanagari script (use Devanagari Hindi for the reply)"
+        return "Devanagari Hindi"
     # Roman Hinglish ke common shabd — agar mile to Hinglish maano
+    # (ki/ka/ke/ye/wo/aur jaise shabd English me nahi hote — unse Hinglish pakdo)
     hinglish_markers = {
         "bhai", "kya", "hai", "nahi", "accha", "acha", "kaise", "kyun",
         "kyu", "yaar", "batao", "bata", "karo", "tum", "aap", "mujhe",
         "tumhe", "bata", "dekh", "kitna", "kab", "kaise",
+        "ki", "ka", "ke", "ye", "wo", "aur", "kitne", "kitni",
     }
     words = set(re.findall(r"[a-z']+", text.lower()))
     if words & hinglish_markers:  # intersection khaali nahi = Hinglish mila
-        return "Roman Hinglish (Hindi written in Roman/English letters)"
+        return "Roman Hinglish"
     return "English"
 
 
@@ -53,14 +65,17 @@ def _build_prompt(video_title, video_context, comment):
         "You write friendly YouTube comment replies for a vlogger.\n"
         "Rules:\n"
         "- Write a friendly reply in 1-2 lines only.\n"
-        f"- LANGUAGE: The comment is written in {language}. "
-        "You MUST reply in the SAME language AND the same script. "
+        f"- Reply language: {language}. The comment is in this language — "
+        "you MUST reply in the SAME language AND the same script. "
         "Never switch scripts (e.g. do not write Hindi in English letters if "
         "the comment used Devanagari).\n"
         "- Answer ONLY from the video context given below. "
         "Never state facts that are not written in the video context — "
         "especially camera model, place names, prices/fees, addresses or "
         "people's names.\n"
+        "- Never claim personal facts about yourself (studies, age, home "
+        "city, job, gender) — no 'main padhta hoon' / 'I am a student' "
+        "style first-person claims.\n"
         "- If the comment asks a FACTUAL question whose answer is NOT in the "
         "video context below, then say (in the comment's language) that you "
         "will check and let them know (e.g. 'dekh ke batata hoon').\n"
@@ -86,13 +101,15 @@ def _build_prompt(video_title, video_context, comment):
 
 
 def _validate_reply(reply):
-    # Reply me URL/phone/secret mila to False — caller ko None return karna hai
+    # Reply me URL/phone/secret/personal claim mila to False — caller ko None return karna hai
     if _URL_RE.search(reply):
         return False, "URL/link"
     if _PHONE_RE.search(reply):
         return False, "phone number"
     if _SECRET_RE.search(reply):
         return False, "api key/secret jaisi cheez"
+    if _PERSONAL_CLAIM_RE.search(reply):
+        return False, "personal claim (pehla person)"
     return True, ""
 
 
@@ -275,8 +292,15 @@ def _build_institute_prompt(comment, chunks, allow_contact):
         "chunks given below.\n"
         "Rules:\n"
         "- Write 2-3 lines, friendly and helpful.\n"
-        f"- LANGUAGE: The comment is in {language}. Reply in the SAME language "
-        "AND the same script (never switch scripts).\n"
+        f"- Reply language: {language}. The comment is in this language — "
+        "you MUST write the reply in EXACTLY this language and the same "
+        "script. Never switch scripts, never mix languages (Roman Hinglish "
+        "comment = Roman Hinglish reply, English = English, Devanagari = "
+        "Devanagari).\n"
+        "- NEVER speak in first person about yourself: no age, studies, home "
+        "city, job or gender claims — nothing like 'main padh raha/rahi "
+        "hoon', 'I am a student', 'main yahan rehta hoon'. Speak only as "
+        "'hum' / 'ZedKing team' (the institute).\n"
         "- Answer ONLY from the chunks. Never invent or estimate any fee, "
         "duration, number, address, phone number or link.\n"
         "- If the chunks do not contain the answer, or the chunk says "
@@ -347,6 +371,11 @@ def answer_institute(comment, chunks):
         if urls or nums or addr:
             logger.warning("Institute reply discard (koi chunk nahi par fact mila): %s", reply[:120])
             return None
+
+    # --- Personal claim check: pehle person me apne baare me = reply PHENK do ---
+    if _PERSONAL_CLAIM_RE.search(reply):
+        logger.warning("Institute reply discard (personal claim): %s", reply[:120])
+        return None
 
     # --- Contact cap ka safety net: allow nahi tha aur phone/link aa gaya → discard ---
     if not allow_contact and (_URL_RE.search(reply) or _PHONE_RE.search(reply)):
