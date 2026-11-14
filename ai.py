@@ -255,6 +255,29 @@ def _facts_in_chunks(reply, chunks):
     return True, ""
 
 
+# Spec Step 4: generalization ke strong words — reply me ye dikhe to chunk me
+# hubahu likhe hone chahiye, warna reply discard (fee/duration/mode/eligibility/
+# certificate/contact ke number ka check _facts_in_chunks pehle se karta hai)
+_STRONG_CLAIM_RE = re.compile(
+    r"(?i)\bsabhi\b|\bsab\b|\bguarantee\w*|\b100\s*%|\b100\s*percent\b"
+)
+
+
+def _grounded_claims(reply, chunks):
+    """Spec Step 4 post-check: claim-wale (number/strong word) sentence grounded ho.
+
+    (True, "") = sahi; (False, reason) = reply phenko. Numbers ka check
+    _facts_in_chunks global already karta hai — yahan strong words ka sentence-level
+    check: strong word har jagah chunk me bhi likha hona chahiye.
+    """
+    combined = "\n".join(c["text"] for c in chunks).lower()
+    for sent in re.split(r"[.!?\n\u0964]+", reply):  # sentence-wise (danda bhi)
+        for m in _STRONG_CLAIM_RE.finditer(sent):  # har strong word check karo
+            if m.group().lower() not in combined:
+                return False, f"strong claim chunk me nahi: {m.group().lower()}"
+    return True, ""
+
+
 def _contact_allowed():
     # Aaj ka contact-reply cap: MAX_CONTACT_REPLIES_PER_DAY tak hi phone/link jaaye
     import db  # local import — test_all jaise scripts bina db ke bhi chal sakein
@@ -406,6 +429,11 @@ def _build_institute_prompt(comment, chunks, allow_contact, clarify_titles=None)
         "'hum' / 'ZedKing team' (the institute).\n"
         "- Answer ONLY from the chunks. Never invent or estimate any fee, "
         "duration, number, address, phone number or link.\n"
+        "- Reply ONLY with facts written in these chunks (fee, duration, mode, "
+        "eligibility, certificate, contact). Do NOT add any generalization of "
+        "your own — phrases like 'Sabhi candidates ke liye same', "
+        "'guaranteed job' or '100%' are allowed ONLY if they are written "
+        "word-for-word in the chunks below.\n"
         "- If the chunks do not contain the answer, or the chunk says "
         "'UNKNOWN - institute se confirm karein', tell the user (in their "
         "language) to contact the institute, and use the official contact "
@@ -476,6 +504,11 @@ def answer_institute(comment, chunks):
         ok, why = _facts_in_chunks(reply, chunks)
         if not ok:
             logger.warning("Institute reply discard (validator): %s | reply=%s", why, reply[:120])
+            return None
+        # --- Step 4: extra generalization check (sabhi/guarantee/100% grounded?) ---
+        ok, why = _grounded_claims(reply, chunks)
+        if not ok:
+            logger.warning("Institute reply discard (generalization): %s | reply=%s", why, reply[:120])
             return None
     else:
         # Koi chunk hi nahi — reply me koi number/link aa gaya to unsafe hai, phenko
