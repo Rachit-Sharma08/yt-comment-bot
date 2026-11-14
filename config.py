@@ -24,7 +24,7 @@ GEMINI_MODEL = "gemini-3.6-flash"
 # "auto"  = reply actually YouTube par post honge (hamesha pehle draft me test karo!)
 # Fail-safe: agar .env me galat value ho to "auto" kabhi nahi banegi —
 # koi bhi value jo "auto" na ho, draft hi treat hogi.
-MODE = os.getenv("MODE", "auto")  # default "draft"
+MODE = os.getenv("MODE", "draft")  # default "draft"
 
 # --- YouTube API quota (AGENTS.md: daily limit 10,000 units) ---
 # list call = 1 unit, reply post = 50 units. 8000 par bot khud rok jaayega
@@ -103,7 +103,7 @@ MAX_EMOJI_REPLIES_PER_DAY = 40
 CHANNEL_PROFILE = os.getenv("CHANNEL_PROFILE", "personal")
 # INSTITUTE_MODE: True = institute_info comments par knowledge se reply
 # False = unhe "skipped / institute_mode_off" save karo (default safe = False)
-INSTITUTE_MODE = os.getenv("INSTITUTE_MODE", "false").strip().lower() == "true"
+INSTITUTE_MODE = os.getenv("INSTITUTE_MODE", "true").strip().lower() == "true"
 
 # Knowledge file (chunks yahi se banenge — knowledge.py isko padhta hai)
 KNOWLEDGE_FILE = "knowledge/zedking_info.md"
