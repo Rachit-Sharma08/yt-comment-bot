@@ -1,8 +1,11 @@
 # review.py — db ke recent replies ka table (draft review ke liye)
 # Chalao:
-#   python review.py           -> last 20 rows (kisi bhi status ki)
-#   python review.py --drafts  -> sirf draft rows
+#   python review.py            -> last 20 rows (kisi bhi status ki)
+#   python review.py --drafts   -> sirf draft rows (poora comment + reply)
+#   python review.py --today    -> sirf aaj ki rows
+#   python review.py --stats    -> total + status/reason counts + aaj ka hisaab
 import sys  # argv + console encoding ke liye
+from datetime import datetime  # --stats me aaj ki date dikhane ke liye
 
 # Windows console cp1252 hai — emoji wale comments bina crash ke chhapein
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -16,9 +19,43 @@ def _cut(s, n):
     return s if len(s) <= n else s[: n - 1] + "…"
 
 
+def _print_stats():
+    total, by_status, by_reason, today = db.reply_stats()
+    print("=== REPLY STATS ===")
+    print(f"Total rows: {total}\n")
+
+    print("Status:")
+    for name, n in by_status:
+        print(f"  {name:10} {n}")
+    if not by_status:
+        print("  (khali)")
+
+    print("\nReason:")
+    for name, n in by_reason:
+        print(f"  {(name or '(khali)'):24} {n}")
+    if not by_reason:
+        print("  (khali)")
+
+    print(f"\nAaj ({datetime.now().strftime('%Y-%m-%d')}):")
+    if not today:
+        print("  koi row nahi")
+    for name, n in today:
+        print(f"  {name:10} {n}")
+
+
 def main():
-    drafts_only = "--drafts" in sys.argv[1:]  # sirf draft rows dikhani hain
-    rows = db.recent_replies(limit=20, status="draft" if drafts_only else None)
+    args = sys.argv[1:]
+    if "--stats" in args:  # stats apne aap me poora output hai
+        _print_stats()
+        return
+
+    drafts_only = "--drafts" in args  # sirf draft rows dikhani hain
+    today_only = "--today" in args    # sirf aaj ki rows
+    rows = db.recent_replies(
+        limit=20,
+        status="draft" if drafts_only else None,
+        today_only=today_only,
+    )
     if not rows:
         print("Koi row nahi mila.")
         return

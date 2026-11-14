@@ -176,22 +176,42 @@ def link_replies_today():
     return count
 
 
-def recent_replies(limit=20, status=None):
+def recent_replies(limit=20, status=None, today_only=False):
     # review.py ke liye: latest rows (status diya ho to sirf wahi, jaise "draft")
+    # today_only = sirf aaj ki rows (local date — user ke din ke hisaab se)
     # ORDER BY created_at DESC + rowid — same second ki rows ka order bhi stable rahe
+    where, params = [], []
     if status:
-        cur = _db().execute(
-            "SELECT created_at, status, reason, comment, reply FROM replies "
-            "WHERE status = ? ORDER BY created_at DESC, rowid DESC LIMIT ?",
-            (status, limit),
-        )
-    else:
-        cur = _db().execute(
-            "SELECT created_at, status, reason, comment, reply FROM replies "
-            "ORDER BY created_at DESC, rowid DESC LIMIT ?",
-            (limit,),
-        )
-    return cur.fetchall()
+        where.append("status = ?")
+        params.append(status)
+    if today_only:
+        where.append("date(created_at, 'localtime') = date('now', 'localtime')")
+    sql = "SELECT created_at, status, reason, comment, reply FROM replies"
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    sql += " ORDER BY created_at DESC, rowid DESC LIMIT ?"
+    params.append(limit)
+    return _db().execute(sql, params).fetchall()
+
+
+def reply_stats():
+    """review.py --stats ke liye: (total, status-wise, reason-wise, aaj status-wise)."""
+    conn = _db()
+    total = conn.execute("SELECT COUNT(*) FROM replies").fetchone()[0]
+    by_status = conn.execute(
+        "SELECT COALESCE(status, '?'), COUNT(*) FROM replies "
+        "GROUP BY status ORDER BY COUNT(*) DESC"
+    ).fetchall()
+    by_reason = conn.execute(
+        "SELECT COALESCE(reason, ''), COUNT(*) FROM replies "
+        "GROUP BY reason ORDER BY COUNT(*) DESC"
+    ).fetchall()
+    today = conn.execute(
+        "SELECT COALESCE(status, '?'), COUNT(*) FROM replies "
+        "WHERE date(created_at, 'localtime') = date('now', 'localtime') "
+        "GROUP BY status ORDER BY COUNT(*) DESC"
+    ).fetchall()
+    return total, by_status, by_reason, today
 
 
 if __name__ == "__main__":

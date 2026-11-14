@@ -35,8 +35,8 @@
 | 18 | बहुत बढ़िया वीडियो | LLM | LLM | बहुत शुक्रिया! ऐसे ही साथ बने रहिए। | PASS |
 | 19 | Great job, keep it up | LLM | LLM | Thank you so much! Glad you liked it. | PASS |
 | 20 | Mast video yaar | LLM | LLM | Bahut shukriya! Aise hi saath bane rahiye. | PASS |
-| 21 | 🔥 | EMOJI | EMOJI | Thanks yaar 🔥 | PASS |
-| 22 | 👍🏽 | EMOJI | EMOJI | Thanks for the love 👍🏽 | PASS |
+| 21 | 🔥 | EMOJI | EMOJI | So sweet, thank you 🔥 | PASS |
+| 22 | 👍🏽 | EMOJI | EMOJI | Appreciate it 👍🏽 | PASS |
 | 23 | 😡👎 | SKIP | SKIP (negative_emoji) |  | — |
 | 24 | 👻 | SKIP | SKIP (unknown_emoji) |  | — |
 | 25 | Subscribe to my channel http://spam.xyz | SKIP | SKIP (contains_url_or_domain) |  | — |
@@ -127,3 +127,35 @@ Koi fail nahi — saare replies checks pass aur decisions expected.
 | llm-11 | institute | Digital marketing course ki eligibility kya hai? | Digital Marketing course ke liye eligibility 10th pass ya uske upar hai. Offline mode me certificate dete hain.  / Dhanyavaad! / Poori detail yahan dekhein: https://zedking.in/digital-marketing-course | Groq | PASS | OK |
 | llm-12 | institute | Institute ka address kya hai? | Shubhkamnayein Call karein: +91-9416111612. Pata: Kaithal - Pundri - Karnal Rd, near New Bus Stand, opp. Hanuman Vatika, Friends Colony, Kaithal, Haryana 136027, India. Admission: https://zedking.in/admission | Groq | PASS | OK |
 <!-- STEP5:END -->
+
+<!-- STEP6:START -->
+## Step 6 — Review stats (`review.py --stats` / `--today`)
+
+- Result: **11/11 PASS** (temp db, koi network call nahi)
+- `--stats`: total + status counts + reason counts + aaj ka hisaab
+- `--today`: sirf aaj (local date) ki rows; `--drafts --today` dono filter
+
+| Check | Result | Detail |
+|---|---|---|
+| empty db --stats | PASS | - |
+| stats total = 8 | PASS | got 8 |
+| stats status counts | PASS | {'draft': 4, 'posted': 2, 'skipped': 1, 'failed': 1} |
+| stats aaj = 7 (purana draft nahi) | PASS | [('draft', 3), ('posted', 2), ('skipped', 1), ('failed', 1)] |
+| --stats output | PASS | === REPLY STATS ===
+Total rows: 8
+
+Status:
+  draft      4
+  posted     2
+  skipped    1
+  failed     1
+
+Reason:
+  instit |
+| --today rows = 7 | PASS | 7 rows |
+| --today me purana draft nahi | PASS | - |
+| --drafts rows = 4 | PASS | - |
+| --drafts me poora long comment | PASS | - |
+| --drafts --today rows = 3 | PASS | - |
+| normal table rows = 8 | PASS | - |
+<!-- STEP6:END -->
