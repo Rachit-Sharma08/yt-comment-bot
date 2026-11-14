@@ -232,6 +232,9 @@ CONTACT_REPLY_PARTS = {
         "link": ["दाखिला: {url}", "दाखिला फॉर्म यहाँ: {url}"],
     },
 }
+
+# --- Step 5: Institute reply ki max length (link ke saath) ---
+MAX_INSTITUTE_REPLY_CHARS = 280
 # Course link suffix templates (3 languages x 2 variants) — {url} = course chunk ka source URL
 COURSE_LINK_TEMPLATES = {
     "Roman Hinglish": [

@@ -18,9 +18,6 @@ LAST_MODEL = None
 
 logger = logging.getLogger(__name__)
 
-# Reply ki max length (chars) — contact reply + LLM part ek saath 280 ke andar
-_MAX_REPLY_CHARS = 280
-
 # --- Reply validation: LLM ne galti se ye likh diya to reply PHENK do (None) ---
 # (AGENTS.md rule: fee/duration/phone/link/address sirf knowledge chunk se — validator check karega)
 _URL_RE = re.compile(r"(?i)https?://|www\.|\b[\w-]+\.(?:com|in|xyz|net|org|io|me|co)\b")
@@ -464,7 +461,7 @@ def _build_institute_prompt(comment, chunks):
         "You answer questions for ZedKing Institute using ONLY the knowledge "
         "chunks given below.\n"
         "Rules:\n"
-        "- Write 2-3 lines, friendly and helpful.\n"
+        "- Write 2-3 SHORT lines, maximum 200 characters in total.\n"
         f"- Reply language: {language}. The comment is in this language - "
         "you MUST write the reply in EXACTLY this language and the same "
         "script. Never switch scripts, never mix languages (Roman Hinglish "
@@ -482,6 +479,9 @@ def _build_institute_prompt(comment, chunks):
         "'guaranteed job' or '100%' are allowed ONLY if they are written "
         "word-for-word in the chunks below.\n"
         "- Do NOT write any phone number or link - we add those separately.\n"
+        "- NO filler sentences (never write 'hum aapki madad ke liye hamesha "
+        "yahan hain'). Give only the facts.\n"
+        "- End with only ONE short closing line.\n"
         "- If the chunks do not contain the answer, say in the comment's "
         "language that you will get the correct details from the institute.\n"
         "- Vary your wording so replies never look copy-pasted.\n"
@@ -545,9 +545,9 @@ _CONTACT_INTENT_RE = re.compile(
 
 # Filler lines jo reply me nahi chahiye (spec Step 5) — poori line hata do
 _FILLER_RE = re.compile(
-    r"(?im)^.*\b(?:hum aapki madad ke liye hamesha|hum hamesha yahan hain|"
+    r"(?i)[^.\n]*\b(?:hum aapki madad ke liye hamesha|hum hamesha yahan hain|"
     r"aapki madad ke liye hamesha|we are always here for you|"
-    r"always available for you)\b.*$\n?"
+    r"always available for you)\b[^.\n]*[.\n]?"
 )
 
 
@@ -564,6 +564,57 @@ def _course_page_url(chunk):
     return m.group(0) if m else ""
 
 
+def _strip_filler(text):
+    """Filler lines hata do (spec Step 5) — 'hamesha yahan hain' type."""
+    out = _FILLER_RE.sub("", text or "")
+    return re.sub(r"\n{2,}", "\n", out).strip()
+
+
+def _shorten_reply(reply, comment):
+    """Spec Step 5: LLM se ek baar chhota version maango. Fail/aur lamba ho to None."""
+    language = _detect_language(comment)
+    prompt = (
+        "Shorten this YouTube comment reply to at most 180 characters, maximum 2 "
+        "short lines. Keep EXACTLY the same facts, numbers and language (" + language +
+        "). No filler sentence, only one closing line. Return ONLY the shortened reply.\n\n"
+        "Reply to shorten:\n" + reply
+    )
+    for call, name in (
+        (lambda p: _call_groq(p, config.INSTITUTE_TEMPERATURE), "Groq"),
+        (lambda p: _call_gemini(p, config.INSTITUTE_TEMPERATURE), "Gemini"),
+    ):
+        try:
+            out = call(prompt)
+        except Exception as e:
+            logger.warning("shorten %s fail: %s", name, e)
+            continue
+        if out and len(out.strip()) <= 200:
+            return out.strip()
+    return None
+
+
+# Contact intent me LLM ka apna address/label duplicate na ho — poori line hatao
+# (address aksar apni line me hota hai; "Kaithal ke 4 branches" jaisi line safe rehti hai)
+_ADDRESS_LINE_RE = re.compile(
+    r"(?i)(?:\baddress\b|\bpata\b|\b136027\b|\bbus stand\b|\bhanuman vatika\b|"
+    r"\bfriends colony\b|\bpundri\b|\bkarnal rd\b|\bपता\b|\bपते\b)"
+)
+_DANGLING_LABEL_RE = re.compile(
+    r"(?i)\b(?:contact|phone|call|admission|link)\s*[:\-]\s*(?=[.\n]|$)"
+)
+
+
+def _clean_contact_part(reply):
+    """LLM ke contact hisse ko saaf karo — address/phone/link hum khud jodenge."""
+    lines = [ln for ln in (reply or "").splitlines() if not _ADDRESS_LINE_RE.search(ln)]
+    out = " ".join(lines)
+    out = _DANGLING_LABEL_RE.sub("", out)
+    out = re.sub(r"\s{2,}", " ", out)
+    out = re.sub(r"\s+([.,!?])", r"\1", out)
+    out = out.strip(" ,.;:-")
+    return out
+
+
 def _check_links(reply):
     """Spec Step 4 validator — max ek link, whitelist me, domain zedking.in."""
     urls = _extract_urls(reply)
@@ -574,6 +625,24 @@ def _check_links(reply):
         if not ok:
             return False, why
     return True, ""
+
+
+def _enforce_length(reply, link_line, comment, language):
+    """Spec Step 5: 280 char + 3 line limit. Lamba ho to ek baar short version,
+    phir bhi lamba ho to template fallback."""
+    def build(body):
+        return (body + "\n" + link_line) if link_line else body
+
+    final = build(reply)
+    if len(final) <= config.MAX_INSTITUTE_REPLY_CHARS and final.count("\n") <= 2:
+        return final
+    short = _shorten_reply(reply, comment)
+    if short:
+        cand = build(short)
+        if len(cand) <= config.MAX_INSTITUTE_REPLY_CHARS and cand.count("\n") <= 2:
+            return cand
+    logger.warning("reply 280 char me nahi aaya — template fallback")
+    return templates.unknown(language)
 
 
 def answer_institute(comment, chunks):
@@ -642,6 +711,7 @@ def answer_institute(comment, chunks):
     # LLM ke apne links/phone hata do — ek controlled link hum khud add karenge
     reply = _strip_links(reply)
     reply = _PHONE_RE.sub("", reply)
+    reply = _strip_filler(reply)
 
     # --- Validator: facts chunk me honi chahiye, warna reply PHENK do ---
     if chunks:
@@ -679,7 +749,8 @@ def answer_institute(comment, chunks):
             language, phone, address, url,
             with_phone=with_phone, with_link=with_link,
         )
-        if len(reply) + 1 + len(extra) <= _MAX_REPLY_CHARS:
+        reply = _clean_contact_part(reply)
+        if len(reply) + 1 + len(extra) <= config.MAX_INSTITUTE_REPLY_CHARS:
             reply = (reply + " " + extra).strip()
         else:
             reply = extra
@@ -702,11 +773,8 @@ def answer_institute(comment, chunks):
             link_line = templates.link_line(language, url)
             logger.info("course link joda: %s", url)
 
-    # Link line reply ke end me jodo (Step 4 — chhoti line + course page URL)
-    if link_line:
-        reply = (reply + "\n" + link_line).strip()
-
-    # --- Step 5 (agli step): length + tone check yahan aayega ---
+    # --- Step 5: length + tone (280 char, 3 line) ---
+    reply = _enforce_length(reply, link_line, comment, language)
 
     # --- Step 4 validator: max ek link, whitelist + zedking.in ---
     ok, why = _check_links(reply)
