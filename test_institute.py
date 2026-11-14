@@ -6,6 +6,7 @@
 import logging
 import re  # no_fee check ke liye (fee/duration number dhundhna)
 import sys
+import time  # cases ke beech delay — Groq/Gemini free tier rate-limit (429) se bachne ke liye
 
 import ai  # answer_institute + make_reply
 import db  # contact cap ke liye table chahiye
@@ -22,7 +23,7 @@ logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 # baaki labels (praise/other) ko main.py ke LLM path jaisa context chahiye
 DUMMY_CONTEXT = "Sample video: daily vlog about computers and courses."
 
-# 11 test cases (spec Step 6 ke hisaab se + Step 4 ke naye)
+# 12 test cases (spec Step 6 ke hisaab se + Step 4/5 ke naye)
 CASES = [
     "CCC course ki fees kitni hai?",
     "Kaithal me institute kahan hai?",  # (c) Step 4: institute_info + reply
@@ -35,6 +36,7 @@ CASES = [
     "Nice video bro",  # praise
     "Zedking digital marketing ki fees ?",  # (a) Step 4: reply Roman Hinglish me
     "Aap konse institute padhte ho ?",  # (b) Step 4: personal_question -> SKIP
+    "Digital marketing ki fees?",  # Step 5: fee NAHI — clarification ya contact
 ]
 
 # Naye cases ke expected results — comment ke ek hisse se match hote hain
@@ -49,13 +51,18 @@ EXPECT = {
     "Kaithal me institute kahan hai": {
         "label": "institute_info", "reply": True,
     },
+    "Digital marketing ki fees": {
+        "label": "institute_info", "reply": True, "no_fee": True,
+    },
 }
 
 
 def _no_fee(reply):
-    # Reply me fee/duration jaisa number NAHI — 10+ digit phone chhod kar
-    # (10 digit se chhota har digit-run = fee/amount/duration ka number)
-    for m in re.finditer(r"\d[\d,]*", reply):
+    # Reply me fee/duration jaisa number NAHI — wahi check jo ai.py course gate
+    # karta hai: phone ki formatting (+91-, spaces) hatao, 10+ digit = phone (OK),
+    # usse chhota har digit-run = fee/amount/duration ka number (FAIL)
+    norm = re.sub(r"[\s\-‐‑–—()+]", "", reply)
+    for m in re.finditer(r"\d[\d,]*", norm):
         if len(re.sub(r"\D", "", m.group())) < 10:
             return False
     return True
@@ -132,6 +139,7 @@ def main():
             if exp.get("no_fee") and reply:
                 results.append((i, "no fee number", _no_fee(reply)))
         print()
+        time.sleep(8)  # cases ke beech gap — free tier ke 429 se bachne ke liye
 
     print("=" * 70)
     print("CHECKS:")
