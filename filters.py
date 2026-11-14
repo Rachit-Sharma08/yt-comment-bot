@@ -65,6 +65,9 @@ def strip_markdown(text):
     t = re.sub(r"(?m)^\s*[-*]\s+", "", t)  # line-start "- bullet" -> bullet
     t = t.replace("`", "")  # code-span markers, andar ka text rehta hai
     t = t.replace("**", "").replace("__", "")  # akshe reh gaye bold markers
+    # Marker hatne se 2+ spaces bach sakti hain ("x ** a ** y" -> "x  a  y") —
+    # sirf 2+ spaces ko ek space me badlo; word ke beech ka SINGLE space NAHI chhua
+    t = re.sub(r" {2,}", " ", t)
     return t.strip()
 
 
@@ -124,4 +127,11 @@ if __name__ == "__main__":
     assert strip_markdown("[Click](https://x.com)") == "Click"
     assert strip_markdown("user_name ❤️ 100% zyada") == "user_name ❤️ 100% zyada"
     assert strip_markdown("2 * 3 = 6?") == "2 * 3 = 6?"  # normal punctuation bacha
+    # Step 1 (space bug): marker hate par word-space NAHI jaye, 2+ spaces -> 1
+    assert strip_markdown("Digital Marketing **course** ki fees") == "Digital Marketing course ki fees"
+    assert strip_markdown("hai aur **10th pass** ya usse upar") == "hai aur 10th pass ya usse upar"
+    assert strip_markdown("**Digital Marketing** course") == "Digital Marketing course"
+    assert strip_markdown("x ** a ** y") == "x a y"  # marker internal space = double space -> 1
+    assert strip_markdown("a  b   c") == "a b c"  # purani multiple spaces bhi collapse
+    assert strip_markdown("one two three") == "one two three"  # single space KABHI nahi chhoota
     print("filters self-check PASS")
