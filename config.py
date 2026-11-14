@@ -80,17 +80,18 @@ POSITIVE_EMOJIS = [
 NEGATIVE_EMOJIS = ["👎", "😡", "🤬", "😠", "😢", "😭", "🤮", "😒", "🙄"]
 
 # {e} = viewer ka apna emoji (comment wapas bhejta hai). Har reply alag lage — random chunta hai.
+# Har template chhota + natural, aur {e} se PEHLE hamesha ek space (na to wo chipak jaaye)
 EMOJI_REPLY_TEMPLATES = [
-    "Shukriya! {e}",
     "Thanks yaar {e}",
-    "Bahut achha laga ki pasand aaya {e}",
-    "Glad you liked it! {e}",
-    "Thanks for the love {e}",
+    "Shukriya! {e}",
     "Dhanyavaad {e}",
+    "So sweet, thank you {e}",
+    "Glad you liked it {e}",
+    "Thanks for the love {e}",
+    "Bahut achha laga {e}",
     "You made my day {e}",
-    "Kya baat hai — shukriya {e}",
-    "Appreciate it! {e}",
-    "Har emoji ka support chahiye, thanks {e}",
+    "Thanks for watching {e}",
+    "Appreciate it {e}",
 ]
 
 # Roz zyada se zyada itne emoji replies (spam policy: ek jaisa reply repeat na lage)
