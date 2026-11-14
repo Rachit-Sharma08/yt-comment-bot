@@ -197,3 +197,16 @@ Reason:
 | resume_bot.bat -> STOP file hata di | PASS | [resume_bot] STOP file hata diya - bot ab chal sakta hai.
  |
 <!-- STEP7:END -->
+
+<!-- STEP8:START -->
+## Step 8 - README
+
+- Status: **done** (README.md bana diya)
+- Sections: project description, ASCII flow diagram, features, folder structure,
+  setup (venv + .env keys + Google OAuth desktop app), modes table, safety
+  (kill switch, caps, validators, secrets, quota), test commands, review commands.
+- Koi claim README me likha hai wo code se verify kiya gaya hai
+  (QUOTA_LIMIT 8000, MAX_REPLIES_PER_RUN 10 / live 3, emoji 40/day,
+  contact 10/day, link 15/day, 5 min interval, 20-60 sec delay).
+- Task Scheduler me kuch register nahi kiya - steps sirf WINDOWS_RUN.md me hain.
+<!-- STEP8:END -->
