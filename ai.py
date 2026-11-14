@@ -374,6 +374,14 @@ def _course_gate(comment):
 def _build_institute_prompt(comment, chunks, allow_contact, clarify_titles=None):
     # Comment ki language/script me 2-3 line friendly reply — SIRF chunks se
     language = _detect_language(comment)
+    # Blocked path: model ko Fee/Duration ki LINES hi mat dikhao — number
+    # dikhega to model leak kar deta hai (reply phir digit-validator me discard
+    # hoti thi = flaky test). chunks_text banne se PEHLE sanitize karo.
+    if clarify_titles is not None:
+        chunks = [
+            {**c, "text": re.sub(r"(?m)^- (?:Fee|Duration):.*$", "", c["text"])}
+            for c in chunks
+        ]
     if chunks:
         chunks_text = "\n\n".join(
             f"[Chunk: {c['heading']}]\n{c['text']}" for c in chunks
