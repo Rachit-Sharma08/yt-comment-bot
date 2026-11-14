@@ -159,3 +159,41 @@ Reason:
 | --drafts --today rows = 3 | PASS | - |
 | normal table rows = 8 | PASS | - |
 <!-- STEP6:END -->
+
+<!-- STEP7:START -->
+## Step 7 — Windows runner (`run_bot.bat`) + autostart docs
+
+- Result: **12/12 PASS** (koi network call nahi, sirf .bat logic)
+- `run_bot.bat` -> `main.py --loop`; `--live` passthrough se aata hai
+- Exit 3 (token expire / invalid_grant) par **restart nahi** hota
+- Exit 2 (galat flag) par bhi restart nahi; baaki error par 60s gap ke saath restart
+- Kill switch: `stop_bot.bat` (STOP file) / `resume_bot.bat` (delete)
+- Task Scheduler me kuch bhi register nahi kiya gaya — steps sirf `WINDOWS_RUN.md` me documented hain
+
+| Check | Result | Detail |
+|---|---|---|
+| run_bot.bat / stop_bot.bat / resume_bot.bat exist | PASS | - |
+| exit 3 -> returncode 3 | PASS | got 3 |
+| exit 3 -> token message | PASS | [run_bot] Bot exit code: 3
+[run_bot] Token expire ho gaya. token.json delete karke python main.py --once chalao aur dobara login karo.
+[run_bot] Restart nahi ka |
+| exit 3 -> koi restart nahi | PASS | [run_bot] Bot exit code: 3
+[run_bot] Token expire ho gaya. token.json delete karke python main.py --once chalao aur dobara login karo.
+[run_bot] Restart nahi ka |
+| exit 2 -> returncode 2 + no restart | PASS | code=2 |
+| exit 0 -> returncode 0 | PASS | got 0 |
+| exit 1 -> restart hua | PASS | [run_bot] Bot exit code: 1
+[run_bot] Bot band hua - 1 sec baad dobara chalaunga.
+[run_bot] Bot exit code: 1
+[run_bot] 1 baar restart ho gaya - ab ruk raha hoon.
+ |
+| exit 1 -> limit ke baad ruka + code 1 | PASS | code=1 |
+| venv na ho -> returncode 2 + message | PASS | code=2 out=[run_bot] venv\Scripts\python.exe nahi mila - pehle venv banao.
+ |
+| stop_bot.bat -> STOP file bani | PASS | [stop_bot] STOP file bana diya - bot band ho jayega.
+ |
+| STOP file -> bot nahi chala (code 0) | PASS | code=0 out=[run_bot] STOP file mila - bot nahi chala. Resume ke liye: del STOP
+ |
+| resume_bot.bat -> STOP file hata di | PASS | [resume_bot] STOP file hata diya - bot ab chal sakta hai.
+ |
+<!-- STEP7:END -->
