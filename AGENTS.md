@@ -67,8 +67,13 @@
   number, fee, phone, address ya link apni taraf se nahi banayega.
   **Validator ye check karega** (reply me har number/fee/phone/link/address
   chunk me exact hona chahiye — warna reply discard).
-- **Reply ki language comment ki language jaisi hogi** — Devanagari Hindi ho to
-  Devanagari Hindi, Roman Hinglish ho to Roman Hinglish, English ho to English.
+- **Bot kabhi pehle person me apne baare me kuch nahi bolega** (student,
+  teacher, "main padhta hoon", kahan rehta hoon, umar, gender). Institute
+  channel par "hum" ya "ZedKing team" ke roop me bolega. Personal channel
+  par bhi channel ke malik ke baare me koi claim nahi.
+- **Reply ki language hamesha comment ki language jaisi** — institute
+  replies me bhi: Roman Hinglish comment → Roman Hinglish reply,
+  English → English, Devanagari → Devanagari.
 - **Jo jaankari video context me nahi hai wo andaze se nahi bolni** — na pata
   ho to comment ki language me bolo ki dekh ke batata hoon.
 
