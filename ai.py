@@ -298,7 +298,9 @@ def _course_cores():
 
 
 def _closest_course_titles(comment, limit=2):
-    # Comment ke shabd se sabse milte-julte course titles (file ke EXACT headings)
+    # Comment ke shabd se sabse milte-julte courses ke CHHOTE naam (spec Step 2:
+    # clarification me hamesha short_name — lamba SEO subtitle nahi)
+    import knowledge  # local import — test_all jaise scripts bina knowledge ke bhi chalein
     words = set(re.findall(r"[a-z0-9+#]{3,}", comment.lower()))
     scored = []
     for core, title in _course_cores():
@@ -307,9 +309,7 @@ def _closest_course_titles(comment, limit=2):
         if score:
             scored.append((score, title))  # (score, title) — sort stable = file order
     scored.sort(key=lambda x: -x[0])
-    # Title me leading list-number ("18. ") mat bhejo — clarification reply me
-    # uski wajah se chhota number (fee jaisa) lag sakta tha aur reply discard hota
-    return [re.sub(r"^\d+\.\s*", "", t) for _, t in scored[:limit]]
+    return [knowledge.short_name(t) for _, t in scored[:limit]]
 
 
 def _course_gate(comment):

@@ -63,6 +63,58 @@ def _section_source(body):
     return m.group(1).strip() if m else ""
 
 
+# Ye ALLCAPS shabd course ke CODE nahi hain (GST/AI/SSC jaise content words) —
+# inko code mat maano, warna "Python Programming (AI)" jaise galat naam banenge
+_NON_CODE = {
+    "AI", "GST", "TDS", "SEO", "SEM", "BI", "IT", "SSC", "HSSC",
+    "CGL", "CHSL", "MTS", "CET", "IBPS", "SBI", "RRB", "NIELIT",
+}
+
+
+def short_name(heading):
+    """Course heading se chhota naam (spec Step 2) — clarification me yahi bologe.
+
+    "18. Digital Marketing Course in Kaithal — DMA – SEO, Google Ads..." ->
+    "Digital Marketing (DMA)" — SEO ke lambe hisse (" - ...", "(...)") hatao,
+    " in Kaithal"/"Course" hatao, par course ka code (DMA, CCC, CDA) rakho.
+    Mapping EK jagah = isi function me. Non-course heading waisa hi wapas.
+    """
+    if not re.match(r"^\d+\.\s*", heading):
+        return heading  # course heading nahi (branch/section) — chheda mat
+    t = re.sub(r"^\d+\.\s*", "", heading).strip()
+
+    # --- Code nikalo (3 jagah se), NON_CODE shabd chhod kar ---
+    code = None
+    cands = []
+    m = re.match(r"([A-Z][A-Z0-9]{1,4})\b", t)  # shuruaat me code: "CCC ..."
+    if m:
+        cands.append(m.group(1))
+    parts = re.split(r"\s+[—–-]\s+", t, maxsplit=1)  # dash ke baad pehla word: "— DMA ..."
+    if len(parts) > 1:
+        m = re.match(r"([A-Z][A-Z0-9]{1,4})\b", parts[1].strip())
+        if m:
+            cands.append(m.group(1))
+    m = re.search(r"\(([A-Z][A-Z0-9]{1,4})\)", t)  # paren me code: "(CDA)"
+    if m:
+        cands.append(m.group(1))
+    for c in cands:
+        if c not in _NON_CODE:
+            code = c
+            break
+
+    # --- Naam saaf karo: subtitle, parens, " in Kaithal", "Course" hatao ---
+    name = parts[0]  # pehla hissa = asli naam, aage ka lamba SEO subtitle
+    name = re.sub(r"\s*\([^)]*\)", " ", name)  # "(...SEO...)" jaisa suffix
+    name = re.sub(r"\s+in kaithal\s*$", "", name, flags=re.IGNORECASE)
+    name = name.replace("Course", " ")  # "Digital Marketing Course" -> "Digital Marketing"
+    name = re.sub(r"\s+", " ", name).strip()
+    name = re.sub(r"^(?:in\s+|&\s*)+", "", name, flags=re.IGNORECASE)  # "Course in & X" ka bacha hua
+    name = name.strip(" ,&-")
+    if code and not re.search(r"\b" + re.escape(code) + r"\b", name, re.IGNORECASE):
+        name += f" ({code})"  # code naam me NAHI hai to jodo: DMA, CDA...
+    return name or heading
+
+
 def load_chunks(force=False):
     """File ko chunks me todo (cache ke saath). Missing/broken file = [] (crash nahi).
 
@@ -104,14 +156,18 @@ def load_chunks(force=False):
                 # Course/branch ka apna URL chunk text me rahe (validator ko chahiye)
                 url_m = re.search(r"- URL:\s*(\S+)", sub_body)
                 source = url_m.group(1) if url_m else src
+                h = sub_head.lstrip("# ").strip()
                 chunks.append({
-                    "heading": sub_head.lstrip("# ").strip(),
+                    "heading": h,
+                    "short": short_name(h),  # chhota course naam (clarification ke liye)
                     "source": source,
                     "text": sub_head + "\n" + sub_body + f"\nSource: {source}",
                 })
         else:
+            h = heading.lstrip("# ").strip()
             chunks.append({
-                "heading": heading.lstrip("# ").strip(),
+                "heading": h,
+                "short": short_name(h),  # non-course = waisa hi wapas
                 "source": src,
                 "text": heading + "\n" + body,
             })
@@ -181,4 +237,12 @@ if __name__ == "__main__":
     assert r2, "address search khaali"
     r3 = search("Bitcoin kaise kharide")
     print("bitcoin hits:", len(r3))  # 0 bhi chalega (out of scope)
+    # short_name: heading se chhota naam + code (spec Step 2)
+    assert short_name("18. Digital Marketing Course in Kaithal — DMA – SEO, Google Ads & Social Media") == "Digital Marketing (DMA)"
+    assert short_name("11. Digital Accounting Course (CDA) in Kaithal") == "Digital Accounting (CDA)"
+    assert short_name("25. CCC (NIELIT Course on Computer Concepts)") == "CCC"
+    assert short_name("23. AI Digital Pro — Learn to build almost anything with AI") == "AI Digital Pro"
+    assert short_name("31. Python Programming Course in Kaithal — AI · Data Science · Django") == "Python Programming"  # AI code NAHI
+    assert short_name("38. Tally Prime Course in Kaithal — GST · Accounting") == "Tally Prime"  # GST code NAHI
+    assert all(c["short"] for c in chs)  # har chunk ke paas short ho
     print("knowledge self-check PASS")
