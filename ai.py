@@ -298,18 +298,39 @@ def _course_cores():
 
 
 def _closest_course_titles(comment, limit=2):
-    # Comment ke shabd se sabse milte-julte courses ke CHHOTE naam (spec Step 2:
-    # clarification me hamesha short_name — lamba SEO subtitle nahi)
+    """Comment ke MEANINGFUL shabd se clarification options (max 2, SHORT names).
+
+    Spec Step 3: generic stopwords (digital/course/computer...) par match se
+    option NAHI banega — sirf title ya "Kya sikhaya" (what you learn) text me
+    aane wale real topic words (marketing/tally/python/ccc) par option.
+    Weight: main title 3, SEO subtitle 1, "Kya sikhaya" 1 (tie = file order).
+    """
     import knowledge  # local import — test_all jaise scripts bina knowledge ke bhi chalein
-    words = set(re.findall(r"[a-z0-9+#]{3,}", comment.lower()))
+    stop = set(config.COURSE_STOPWORDS)
+    words = [w for w in re.findall(r"[a-z0-9+#]{3,}", comment.lower())
+             if w not in stop]
     scored = []
-    for core, title in _course_cores():
-        core_words = set(re.findall(r"[a-z0-9+#]{3,}", core))
-        score = len(words & core_words)
+    for c in knowledge.load_chunks():
+        if not re.match(r"^\d+\.\s*", c["heading"]):
+            continue  # course chunks hi option ban sakte hain (branch/section nahi)
+        parts = re.split(r"\s+[—–-]\s+", c["heading"], maxsplit=1)
+        core_low, sub_low = parts[0].lower(), parts[1].lower() if len(parts) > 1 else ""
+        m = re.search(r"Kya sikhaya:\s*(.+)", c["text"])
+        learn_low = m.group(1).lower() if m else ""
+        score = 0
+        for w in words:
+            # word-boundary match — "ccc" "ccba" jaise substring me na phase
+            pat = r"(?<![a-z0-9])" + re.escape(w) + r"(?![a-z0-9])"
+            if re.search(pat, core_low):
+                score += 3  # main title me match = sabse strong
+            elif re.search(pat, sub_low):
+                score += 1  # SEO subtitle me match = kamzor
+            elif re.search(pat, learn_low):
+                score += 1  # "Kya sikhaya" content me match = kamzor
         if score:
-            scored.append((score, title))  # (score, title) — sort stable = file order
-    scored.sort(key=lambda x: -x[0])
-    return [knowledge.short_name(t) for _, t in scored[:limit]]
+            scored.append((score, c["short"]))
+    scored.sort(key=lambda x: -x[0])  # score zyada pehle, tie = file order (stable)
+    return [t for _, t in scored[:limit]]
 
 
 def _course_gate(comment):

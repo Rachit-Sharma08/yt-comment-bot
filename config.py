@@ -145,6 +145,17 @@ COURSE_NAMES = [
     "SSC", "HSSC", "Bank PO", "Banking",
 ]
 
+# --- Step 3: Clarification options ke stopwords ---
+# GENERIC shabd — inke match se kisi course ko option MAT banao (sirf meaningful
+# topic words jaise marketing/tally/python/ccc se hi option banao)
+COURSE_STOPWORDS = [
+    # spec list
+    "digital", "course", "computer", "basic", "advanced", "certificate",
+    "training", "institute", "program",
+    # sawaal ke generic shabd (ye bhi course topic nahi)
+    "fees", "fee", "kitni", "kitna", "kitne", "kaise", "kya", "hai", "zedking",
+]
+
 # --- Criticism / scam wale comments — inka reply BILKUL nahi (abusive list se ALAG) ---
 # Gaali (ABUSE_WORDS) yahan NAHI hai — yahan sirf tareef-negative, waste, fraud ke shabd
 CRITICISM_WORDS = [
