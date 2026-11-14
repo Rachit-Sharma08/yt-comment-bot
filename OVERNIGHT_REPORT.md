@@ -89,3 +89,16 @@ Koi fail nahi — saare replies checks pass aur decisions expected.
 | invalid_grant -> TokenExpiredError | PASS | token.json ko chheda nahi (mock) |
 | Token expire -> exit code 3 + exact message | PASS | Token expire ho gaya. token.json delete karke python main.py --once chalao aur dobara login karo. |
 <!-- STEP3:END -->
+
+<!-- STEP4:START -->
+## Step 4 — Loop stability (mock only)
+
+**Setup:** `loop_mode` 5-6 cycles, `FakeYouTube(auto_feed=2)`, temp DB + temp STOP/lock, sleep monkeypatched — koi real API call nahi.
+
+**Result:** 2/2 scenarios PASS
+
+| Scenario | Result | Detail |
+|---|---|---|
+| 5 clean cycles: no crash, no duplicate | PASS | 10 comments, 8 posts, 0 duplicate |
+| Error cycles: backoff + no duplicate | PASS | network fails 2, failed rows 4, 0 duplicate |
+<!-- STEP4:END -->
