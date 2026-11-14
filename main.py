@@ -20,6 +20,7 @@ import filters  # rule-based skip + emoji_kind
 import pipeline  # comment -> reply ka EK path (test_institute bhi yahi use karta hai)
 import triggers  # keyword canned replies
 import youtube  # official YouTube Data API calls
+import mock_youtube  # --mock / --mock-llm: test ke liye fake YouTube + fake LLM
 
 # Kill switch: is folder me "STOP" naam ki file ho to post BAND + run turant band
 STOP_FILE = Path(__file__).parent / "STOP"
@@ -300,12 +301,26 @@ def loop_mode(live):
 def main():
     args = sys.argv[1:]
     # Typo pakadne ke liye unknown flag pehle hi rok do
-    unknown = [a for a in args if a not in ("--once", "--loop", "--live")]
+    allowed = ("--once", "--loop", "--live", "--mock", "--mock-llm")
+    unknown = [a for a in args if a not in allowed]
     if unknown:
-        print(f"Unknown flag: {' '.join(unknown)} — options: --once (default), --loop, --live")
+        print(f"Unknown flag: {' '.join(unknown)} — options: {', '.join(allowed)}")
         sys.exit(2)
     live = "--live" in args  # asli posting ka switch (MODE=auto ke saath bhi chahiye)
     loop = "--loop" in args  # na ho to ek hi run (--once = default)
+    mock = "--mock" in args  # real YouTube ki jagah FakeYouTube
+    mock_llm = "--mock-llm" in args  # real LLM ki jagah fixed fake replies
+
+    # Fake LLM se real YouTube par post karna khatarnak hai — isliye mock zaroori
+    if mock_llm and not mock:
+        print("--mock-llm ke saath --mock bhi chahiye (fake reply real YouTube par na jaaye).")
+        sys.exit(2)
+    if mock:
+        mock_youtube.install()
+        print("MOCK mode: FakeYouTube — real YouTube API call nahi hogi.")
+    if mock_llm:
+        mock_youtube.install_llm()
+        print("MOCK LLM: fixed fake replies — real Groq/Gemini call nahi hogi.")
 
     if not _acquire_lock():  # ek hi instance — doosra chala to bahar
         sys.exit(1)
