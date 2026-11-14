@@ -31,6 +31,12 @@ _PERSONAL_CLAIM_RE = re.compile(
     r"|\u092e\u0948\u0902\s+\u092a\u0922\u093c"  # मैं पढ़
 )
 
+# Internal words — ye kabhi public reply me nahi dikhne chahiye (prompt/chunk/
+# file ki bhasha bahar aa gayi = reply discard). UNKNOWN bhi wahi chunk-marker hai.
+_INTERNAL_RE = re.compile(
+    r"(?i)\b(?:chunks?|file|knowledge|database|context|prompt|models?|unknown)\b"
+)
+
 # Address ke clear markers — reply me ye dikhe to chunk me bhi hona chahiye
 _ADDR_WORDS = [
     "road", "colony", "chowk", "near", "opp", "bus stand", "haryana",
@@ -102,7 +108,7 @@ def _build_prompt(video_title, video_context, comment):
 
 
 def _validate_reply(reply):
-    # Reply me URL/phone/secret/personal claim mila to False — caller ko None return karna hai
+    # Reply me URL/phone/secret/personal claim/internal word mila to False — caller ko None return karna hai
     if _URL_RE.search(reply):
         return False, "URL/link"
     if _PHONE_RE.search(reply):
@@ -111,6 +117,8 @@ def _validate_reply(reply):
         return False, "api key/secret jaisi cheez"
     if _PERSONAL_CLAIM_RE.search(reply):
         return False, "personal claim (pehla person)"
+    if _INTERNAL_RE.search(reply):
+        return False, "internal word (chunk/file/knowledge/...)"
     return True, ""
 
 
@@ -528,6 +536,11 @@ def answer_institute(comment, chunks):
     # --- Personal claim check: pehle person me apne baare me = reply PHENK do ---
     if _PERSONAL_CLAIM_RE.search(reply):
         logger.warning("Institute reply discard (personal claim): %s", reply[:120])
+        return None
+
+    # --- Internal words: chunk/file/knowledge/prompt/UNKNOWN bahar = PHENK do ---
+    if _INTERNAL_RE.search(reply):
+        logger.warning("Institute reply discard (internal word): %s", reply[:120])
         return None
 
     # --- Step 5: course gate par fee/duration number mila = reply PHENK do ---
