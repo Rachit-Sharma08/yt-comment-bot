@@ -130,6 +130,42 @@ def main_phone():
     return ""
 
 
+def _contact_field(label):
+    """Contact chunk se ek field (Phone/Address/Admission page) — file se hubahu."""
+    for c in load_chunks():
+        if "contact" not in c["heading"].lower():
+            continue
+        m = re.search(r"\*\*" + label + r"[^*]*:\*\*\s*(.+)", c["text"])
+        if m:
+            return m.group(1).strip()
+    return ""
+
+
+def contact_address():
+    """Contact chunk ka address (Step 4 — address intent reply ke liye)."""
+    return _contact_field("Address")
+
+
+def admission_url():
+    """Admission page URL (Step 4 — contact/admission intent ka link)."""
+    return _contact_field("Admission page")
+
+
+def allowed_source_urls():
+    """Knowledge file ke saare source URLs ka set (validator URL whitelist ke liye).
+
+    Sirf zedking.in domain ke URLs whitelist me rakhte hain.
+    """
+    urls = set()
+    for c in load_chunks():
+        src = c.get("source", "")
+        for u in re.findall(r"https?://[^\s,]+", src):
+            u_clean = u.rstrip(".,)")
+            if "zedking.in" in u_clean.lower():
+                urls.add(u_clean)
+    return urls
+
+
 def load_chunks(force=False):
     """File ko chunks me todo (cache ke saath). Missing/broken file = [] (crash nahi).
 

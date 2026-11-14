@@ -141,6 +141,22 @@ def contact_replies_today():
     return count
 
 
+def link_replies_today():
+    """Aaj kitne institute replies me zedking.in URL gaya (draft ya posted) — daily link cap."""
+    import re
+    rows = _db().execute(
+        "SELECT reply FROM replies "
+        "WHERE reason = 'institute' AND status IN ('draft', 'posted') "
+        "AND date(created_at) = date('now')"
+    ).fetchall()
+    pat_url = re.compile(r"(?i)https?://[^\s/]*zedking\.in")
+    count = 0
+    for (r,) in rows:
+        if r and pat_url.search(r):
+            count += 1
+    return count
+
+
 def recent_replies(limit=20, status=None):
     # review.py ke liye: latest rows (status diya ho to sirf wahi, jaise "draft")
     # ORDER BY created_at DESC + rowid — same second ki rows ka order bhi stable rahe

@@ -44,3 +44,27 @@ def unknown(language):
     Phone sirf knowledge file ke contact section se (main_phone).
     """
     return pick("unknown", language, phone=knowledge.main_phone())
+
+
+def link_line(language, url):
+    """Step 4 — course/admission page ka chhota closing line + URL (hubahu)."""
+    variants = config.COURSE_LINK_TEMPLATES.get(language)
+    if not variants:
+        variants = config.COURSE_LINK_TEMPLATES[FALLBACK_LANG]
+    return random.choice(variants).format(url=url)
+
+
+def contact_reply(language, phone, address, url, with_phone=True, with_link=True):
+    """Step 4 — address/admission/contact intent: phone + address + admission link.
+
+    Jo part allowed hai (cap ke hisaab se) wahi lagta hai — max ek link.
+    """
+    parts = config.CONTACT_REPLY_PARTS.get(language) or config.CONTACT_REPLY_PARTS[FALLBACK_LANG]
+    out = []
+    if with_phone and phone:
+        out.append(random.choice(parts["phone"]).format(phone=phone))
+    if address:
+        out.append(random.choice(parts["address"]).format(address=address))
+    if with_link and url:
+        out.append(random.choice(parts["link"]).format(url=url))
+    return " ".join(out)

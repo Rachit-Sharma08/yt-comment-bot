@@ -207,6 +207,47 @@ INSTITUTE_TEMPLATES = {
     },
 }
 
+# --- Step 4: Link rule settings ---
+# Course-specific fee/duration/eligibility reply ke aakhir me link add karna hai
+LINK_IN_COURSE_REPLIES = True
+MAX_LINK_REPLIES_PER_DAY = 15
+
+# --- Step 4: contact/address/admission intent wale reply ---
+# {phone} = institute ka main number, {address} = file ka address, {url} = admission page
+# Har part alag — jo allowed hai (cap ke hisaab se) wahi lagao
+CONTACT_REPLY_PARTS = {
+    "Roman Hinglish": {
+        "phone": ["Call karein: {phone}.", "Phone: {phone}."],
+        "address": ["Address: {address}.", "Pata: {address}."],
+        "link": ["Admission: {url}", "Admission form yahan: {url}"],
+    },
+    "English": {
+        "phone": ["Call us: {phone}.", "Phone: {phone}."],
+        "address": ["Address: {address}.", "Our address: {address}."],
+        "link": ["Admission: {url}", "Admission form here: {url}"],
+    },
+    "Devanagari Hindi": {
+        "phone": ["कॉल करें: {phone}।", "फोन: {phone}।"],
+        "address": ["पता: {address}।", "हमारा पता: {address}।"],
+        "link": ["दाखिला: {url}", "दाखिला फॉर्म यहाँ: {url}"],
+    },
+}
+# Course link suffix templates (3 languages x 2 variants) — {url} = course chunk ka source URL
+COURSE_LINK_TEMPLATES = {
+    "Roman Hinglish": [
+        "Full details yahan dekh sakte hain: {url}",
+        "Poori detail yahan dekhein: {url}",
+    ],
+    "English": [
+        "You can see full details here: {url}",
+        "Check full details here: {url}",
+    ],
+    "Devanagari Hindi": [
+        "पूरी जानकारी यहाँ देख सकते हैं: {url}",
+        "सभी डिटेल्स यहाँ देखें: {url}",
+    ],
+}
+
 # --- Criticism / scam wale comments — inka reply BILKUL nahi (abusive list se ALAG) ---
 # Gaali (ABUSE_WORDS) yahan NAHI hai — yahan sirf tareef-negative, waste, fraud ke shabd
 CRITICISM_WORDS = [
