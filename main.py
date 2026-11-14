@@ -12,10 +12,12 @@ from pathlib import Path  # STOP/lock files dhoondne ke liye
 # Windows console cp1252 hai — Devanagari/emoji print karne ke liye UTF-8 chahiye
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-import ai  # LLM reply (Groq -> Gemini fallback)
+import ai  # LLM reply (Groq -> Gemini fallback) + answer_institute
 import config  # MODE, delays, limits, emoji lists
 import db  # saara database code db.py me
 import filters  # rule-based skip + emoji_kind
+import intent  # comment ka label: institute_info / video_question / praise / ...
+import knowledge  # knowledge file ke chunks + search (institute replies ke liye)
 import triggers  # keyword canned replies
 import youtube  # official YouTube Data API calls
 
@@ -116,7 +118,8 @@ def run(live=False):
     if not comments:
         print("Koi naya comment nahi mila jo process karne layak ho.")
 
-    counts = {"emoji": 0, "trigger": 0, "llm": 0, "draft": 0, "posted": 0, "failed": 0}
+    counts = {"emoji": 0, "trigger": 0, "llm": 0, "institute": 0,
+              "draft": 0, "posted": 0, "failed": 0}
     posted_this_run = 0  # auto mode: kitne replies abhi post ho chuke
 
     for c in comments:
@@ -167,24 +170,63 @@ def run(live=False):
             if reply:
                 counts["trigger"] += 1
             else:
-                # --- 4) LLM path: video info (cache-first) + notes file se context ---
-                title, description = youtube.get_video_info(c["video_id"])
-                notes = youtube.get_video_notes(c["video_id"])  # video_notes/<id>.md ho to
-                context = (description + "\n\n" + notes).strip()  # dono ka combination
-                reply = ai.make_reply(title, context, text)  # validation andar hi hoti hai
-                source = "llm"
-                if reply is None:
-                    # --- 5) LLM fail / validation fail -> status "failed" ---
-                    db.save_reply(c["comment_id"], c["video_id"], text, "", "failed", "llm_fail")
-                    counts["failed"] += 1
-                    logger.warning("FAILED %s text=%s", c["comment_id"], short)
-                    print(f"[FAILED] {short}")
+                # --- 4) Intent: comment ka label (rules pehle, LLM temp 0 fallback) ---
+                label = intent.classify_comment(text, "")
+
+                # --- 4a) criticism/spam par KABHI reply nahi (rule-based skip se alag) ---
+                if label in ("criticism", "spam"):
+                    db.save_reply(c["comment_id"], c["video_id"], text, "", "skipped", label)
+                    skips[label] = skips.get(label, 0) + 1
+                    logger.info("SKIP %s reason=%s text=%s", c["comment_id"], label, short)
+                    print(f"[SKIP] ({label}) {short}")
                     continue
-                counts["llm"] += 1
+
+                # --- 4b) Institute sawaal: mode off = kuch post nahi, sirf skipped save ---
+                if label == "institute_info" and not config.INSTITUTE_MODE:
+                    db.save_reply(c["comment_id"], c["video_id"], text, "", "skipped",
+                                  "institute_mode_off")
+                    skips["institute_mode_off"] = skips.get("institute_mode_off", 0) + 1
+                    logger.info("SKIP %s reason=institute_mode_off text=%s",
+                                c["comment_id"], short)
+                    print(f"[SKIP] (institute_mode_off) {short}")
+                    continue
+
+                if label == "institute_info":
+                    # --- 4c) Institute reply: knowledge chunks se (validator ai.py me) ---
+                    chunks = knowledge.search(text, top_k=3)  # top 3 relevant chunks
+                    reply = ai.answer_institute(text, chunks)
+                    source = "institute"
+                    if reply is None:
+                        # Validator ne phenka ya LLM fail — failed save, aage badho
+                        db.save_reply(c["comment_id"], c["video_id"], text, "", "failed",
+                                      "institute_fail")
+                        counts["failed"] += 1
+                        logger.warning("FAILED(institute) %s text=%s", c["comment_id"], short)
+                        print(f"[FAILED] {short}")
+                        continue
+                    counts["institute"] += 1
+                else:
+                    # --- 4d) Baaki labels (video_question/praise/other): pehle jaisa LLM path ---
+                    title, description = youtube.get_video_info(c["video_id"])
+                    notes = youtube.get_video_notes(c["video_id"])  # video_notes/<id>.md ho to
+                    context = (description + "\n\n" + notes).strip()  # dono ka combination
+                    reply = ai.make_reply(title, context, text)  # validation andar hi hoti hai
+                    source = "llm"
+                    if reply is None:
+                        # --- 5) LLM fail / validation fail -> status "failed" ---
+                        db.save_reply(c["comment_id"], c["video_id"], text, "", "failed", "llm_fail")
+                        counts["failed"] += 1
+                        logger.warning("FAILED %s text=%s", c["comment_id"], short)
+                        print(f"[FAILED] {short}")
+                        continue
+                    counts["llm"] += 1
 
         # --- 6) Save karo: auto = YouTube par post, draft = sirf db ---
-        # (emoji + trigger + llm — teeno ka reply yahin se hokar jaata hai)
-        if config.MODE == "auto":
+        # (emoji + trigger + llm + institute — sab ka reply yahin se hokar jaata hai)
+        # SAFETY: institute replies sirf CHANNEL_PROFILE="zedking" par live post hongi,
+        # warna (personal profile par) hamesha draft me hi save hongi
+        force_draft = source == "institute" and config.CHANNEL_PROFILE != "zedking"
+        if config.MODE == "auto" and not force_draft:
             # --live (live mode) = zyada strict limit, warna normal per-run limit
             limit = config.MAX_REPLIES_PER_RUN_LIVE if live else config.MAX_REPLIES_PER_RUN
             if posted_this_run >= limit:
@@ -231,6 +273,7 @@ def run(live=False):
     print(f"Emoji canned        : {counts['emoji']}")
     print(f"Trigger replies     : {counts['trigger']}")
     print(f"LLM replies         : {counts['llm']}")
+    print(f"Institute replies   : {counts['institute']}")
     print(f"Draft save (draft)  : {counts['draft']}")
     print(f"Posted (auto mode)  : {counts['posted']}")
     print(f"Failed              : {counts['failed']}")
