@@ -89,15 +89,17 @@ def _validate_reply(reply):
     return True, ""
 
 
-def _call_groq(prompt):
+def _call_groq(prompt, temperature=None):
     # Groq ka OpenAI-compatible endpoint — model config.py se aata hai
+    # temperature: None = config.REPLY_TEMPERATURE (0.3), institute replies 0.2 bhejenge
     resp = requests.post(
         "https://api.groq.com/openai/v1/chat/completions",
         headers={"Authorization": f"Bearer {config.GROQ_API_KEY}"},
         json={
             "model": config.GROQ_MODEL,
             "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.9,  # thoda alag-alag wording ke liye (spam na lage)
+            # temperature config se (0.3 = kam hallucination, abhi 0.9 tha)
+            "temperature": config.REPLY_TEMPERATURE if temperature is None else temperature,
         },
         timeout=TIMEOUT_SEC,
     )
@@ -105,8 +107,9 @@ def _call_groq(prompt):
     return resp.json()["choices"][0]["message"]["content"].strip()
 
 
-def _call_gemini(prompt):
+def _call_gemini(prompt, temperature=None):
     # Gemini ka REST endpoint — SDK install nahi karna pada (requests se hi ho jaata hai)
+    # temperature: None = config.REPLY_TEMPERATURE (0.3), institute replies 0.2 bhejenge
     resp = requests.post(
         "https://generativelanguage.googleapis.com/v1beta/models/"
         f"{config.GEMINI_MODEL}:generateContent",
@@ -114,7 +117,8 @@ def _call_gemini(prompt):
         json={
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
-                "temperature": 0.9,  # replies thodi alag ho
+                "temperature": config.REPLY_TEMPERATURE if temperature is None else temperature,
+                # config se (0.3, pehle 0.9)
                 "maxOutputTokens": 300,  # reply chhota rakho (1-2 line)
                 "thinkingConfig": {"thinkingBudget": 0},  # thinking band — 1-2 line reply ke liye nahi chahiye
             },
@@ -131,11 +135,12 @@ def _call_gemini(prompt):
     return reply
 
 
-def make_reply(video_title, video_context, comment, provider=None):
+def make_reply(video_title, video_context, comment, provider=None, temperature=None):
     """Video + comment ke basis par 1-2 line ka reply. Fail ho to None.
 
     provider: None = pehle Groq, fail ho to Gemini (default)
               "groq" = sirf Groq, "gemini" = sirf Gemini (testing ke liye)
+    temperature: None = config.REPLY_TEMPERATURE (0.3)
     """
     global LAST_MODEL  # LAST_MODEL ko update karna hai is function me
     prompt = _build_prompt(video_title, video_context, comment)
@@ -143,7 +148,7 @@ def make_reply(video_title, video_context, comment, provider=None):
     # Step 1: Groq try karo (primary) — provider "gemini" ho to chhod do
     if provider in (None, "groq"):
         try:
-            reply = _call_groq(prompt)
+            reply = _call_groq(prompt, temperature)
             ok, why = _validate_reply(reply) if reply else (False, "khali reply")
             if ok:
                 LAST_MODEL = "Groq"
@@ -155,7 +160,7 @@ def make_reply(video_title, video_context, comment, provider=None):
     # Step 2: Gemini fallback — provider "groq" ho to chhod do
     if provider in (None, "gemini"):
         try:
-            reply = _call_gemini(prompt)
+            reply = _call_gemini(prompt, temperature)
             ok, why = _validate_reply(reply) if reply else (False, "khali reply")
             if ok:
                 LAST_MODEL = "Gemini"

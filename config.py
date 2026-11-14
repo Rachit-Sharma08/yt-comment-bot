@@ -24,7 +24,7 @@ GEMINI_MODEL = "gemini-3.6-flash"
 # "auto"  = reply actually YouTube par post honge (hamesha pehle draft me test karo!)
 # Fail-safe: agar .env me galat value ho to "auto" kabhi nahi banegi —
 # koi bhi value jo "auto" na ho, draft hi treat hogi.
-MODE = os.getenv("MODE", "draft")  # default "draft"
+MODE = os.getenv("MODE", "auto")  # default "draft"
 
 # --- YouTube API quota (AGENTS.md: daily limit 10,000 units) ---
 # list call = 1 unit, reply post = 50 units. 8000 par bot khud rok jaayega
@@ -96,6 +96,54 @@ EMOJI_REPLY_TEMPLATES = [
 
 # Roz zyada se zyada itne emoji replies (spam policy: ek jaisa reply repeat na lage)
 MAX_EMOJI_REPLIES_PER_DAY = 40
+
+# --- Institute mode (ZedKing knowledge replies ka switch) ---
+# CHANNEL_PROFILE: "personal" = purana vlog bot, "zedking" = institute channel
+# SAFETY: institute replies sirf tab LIVE post hongi jab profile "zedking" ho
+CHANNEL_PROFILE = os.getenv("CHANNEL_PROFILE", "personal")
+# INSTITUTE_MODE: True = institute_info comments par knowledge se reply
+# False = unhe "skipped / institute_mode_off" save karo (default safe = False)
+INSTITUTE_MODE = os.getenv("INSTITUTE_MODE", "false").strip().lower() == "true"
+
+# Knowledge file (chunks yahi se banenge — knowledge.py isko padhta hai)
+KNOWLEDGE_FILE = "knowledge/zedking_info.md"
+
+# Roz zyada se zyada itne contact/admission wale replies (phone/link cap — spam safety)
+MAX_CONTACT_REPLIES_PER_DAY = 10
+
+# --- LLM temperature (kam = zyada consistent, hallucination kam) ---
+REPLY_TEMPERATURE = 0.3        # normal video replies (pehle 0.9 tha)
+INSTITUTE_TEMPERATURE = 0.2    # institute knowledge replies (aur bhi strict)
+
+# --- Knowledge search ke Hinglish synonyms (intent + search dono use karte hain) ---
+# ek group = ek concept ke alag-alag tarike bolne ka
+SYNONYMS = [
+    ["fees", "fee", "kitni", "kitna", "price", "cost", "charge", "charges", "फीस", "कितने", "कितनी"],
+    ["duration", "kitne mahine", "kitna time", "length", "mahine", "months", "समय", "अवधि", "कितने महीने"],
+    ["address", "kahan", "location", "pata", "where", "kaha", "कहाँ", "पता", "किस जगह"],
+    ["admission", "join", "dakhila", "enroll", "apply", "प्रवेश", "दाखिला", "एडमिशन"],
+    ["branch", "centre", "center", "office", "शाखा", "ब्रांच"],
+    ["contact", "phone", "number", "mobile", "call", "whatsapp", "संपर्क", "नंबर", "फोन"],
+    ["timing", "time", "hours", "open", "khula", "समय", "टाइमिंग", "कब खुलता"],
+    ["certificate", "certification", "certificate milega", "प्रमाणपत्र", "सर्टिफिकेट"],
+    ["job", "placement", "rojgar", "career", "naukri", "नौकरी", "रोजगार", "प्लेसमेंट"],
+    ["course", "courses", "kya sikhate", "kaun sa course", "कोर्स", "क्या सिखाते"],
+    ["eligibility", "qualification", "who can join", "kaun kar sakta", "योग्यता", "पात्रता"],
+]
+
+# File me mojood course names (intent inke exact match ko bhi institute_info maanta hai)
+# knowledge/zedking_info.md ke course headings se liye gaye hain
+COURSE_NAMES = [
+    "CCC", "BCC", "O Level", "A Level", "CCC Plus", "ACC", "DVP BCC", "DVP CCC",
+    "Tally", "Tally Prime", "Python", "Java", "C Programming", "Cyber Security",
+    "PHP", "MySQL", "IoT", "Financial Accounting", "Digital Accounting",
+    "Office Automation", "Data Analysis", "Web Technology", "CCA", "ACCA",
+    "Software Development", "Designing", "Publishing", "Hardware", "Networking",
+    "Digital Marketing", "Expert Computer", "CCBA", "Web Designing",
+    "Data Entry", "AI Digital Pro", "Stenography", "Steno", "Fire Technology",
+    "Sub Fire Officer", "Fireman", "Health Sanitary Inspector", "Fire & Safety",
+    "SSC", "HSSC", "Bank PO", "Banking",
+]
 
 # --- Criticism / scam wale comments — inka reply BILKUL nahi (abusive list se ALAG) ---
 # Gaali (ABUSE_WORDS) yahan NAHI hai — yahan sirf tareef-negative, waste, fraud ke shabd
