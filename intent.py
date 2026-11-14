@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 # --- Saare allowed labels (isi me se ek return hoga) ---
 LABELS = [
     "institute_info",  # course/fees/admission/address/job ka sawaal
+    "personal_question",  # channel ke malik/vlogger se uski personal baat — reply nahi
     "video_question",  # video ke baare me sawaal (camera, vlog waghera)
     "praise",          # tareef
     "criticism",       # negative feedback
@@ -57,6 +58,26 @@ def _is_praise(text):
     return any(p in low for p in PRAISE_PHRASES)
 
 
+# --- Rule: personal question — doosra person (aap/tum...) + personal topic ---
+# Ye institute se PEHLE check hota hai: "Aap konse institute padhte ho?"
+# institute keyword pakadta hai par asli sawaal MALIK ke personal baat ka hai
+_PERSONAL_RE = re.compile(
+    # doosra person pronoun (word-boundary taaki "aapka" alag na toote)
+    r"\b(?:aap|tum|tera|teri|tumhara|tumhari|aapka|aapki|apka|tujhe|tujhse)\b"
+    r".{0,60}?"  # beech me kuch shabd ho sakte hain
+    # personal topics (user spec: padhte/rehte/umar/naam/salary/kamate/kahan se ho)
+    r"\b(?:padhte|padhna|padhai|rehte|rehta|rehti|umar|naam|salary"
+    r"|kamate|kahan se ho|kahan rehte|shaadi|shadi)\b",
+    re.IGNORECASE,
+)
+
+
+def _is_personal(text):
+    # Sirf tabhi personal jab dono taraf ho: pronoun BHI aur personal topic BHI
+    # (sirf "aapki fees kitni" par na ruke — wo institute_info hi rahega)
+    return bool(_PERSONAL_RE.search(text))
+
+
 # --- Rule 4: institute ke keywords (config.SYNONYMS ke sabhi groups) + course names ---
 # Har term ko word-boundary do taaki "fee" andar "coffee" na pakde le
 def _build_institute_regex():
@@ -88,7 +109,10 @@ def _llm_classify(text):
         "Definitions:\n"
         "- institute_info: question about courses, fees, duration, admission, "
         "address, branch, contact, timing, certificate, job/placement of an "
-        "institute/training centre.\n"
+        "institute/training centre (including where the institute is).\n"
+        "- personal_question: question asking the channel owner/vlogger about "
+        "THEIR personal life — where they study/live, age, name, salary, "
+        "marriage, job. Asking about the PERSON, not the institute.\n"
         "- video_question: question about the video itself (what/where/how in "
         "the video, camera, vlog details).\n"
         "- praise: compliment or positive feedback.\n"
@@ -154,8 +178,8 @@ def _gemini(prompt):
 
 
 def classify_comment(text, video_title=""):
-    """Comment ka label return karo: institute_info / video_question / praise /
-    criticism / spam / other. Pehle rules, phir LLM (temperature 0).
+    """Comment ka label return karo: institute_info / personal_question /
+    video_question / praise / criticism / spam / other. Pehle rules, phir LLM.
 
     video_title abhi sirf API signature ke liye hai (aage context me kaam aayega).
     """
@@ -163,14 +187,17 @@ def classify_comment(text, video_title=""):
     if not text:
         return "other"
 
-    # Order: spam > criticism > praise > institute > LLM
-    # (praise pehle isliye — "Nice video bro" jaise clear praise par LLM na lage)
+    # Order: spam > criticism > praise > personal > institute > LLM
+    # (praise pehle isliye — "Nice video bro" jaise clear praise par LLM na lage;
+    #  personal institute se pehle — "Aap konse institute padhte ho?" skip hoga)
     if _is_spam(text):
         return "spam"
     if _is_criticism(text):
         return "criticism"
     if _is_praise(text):
         return "praise"
+    if _is_personal(text):
+        return "personal_question"
     if _is_institute(text):
         return "institute_info"
     return _llm_classify(text)
@@ -185,5 +212,11 @@ if __name__ == "__main__":
     assert classify_comment("CCC course ki fees kitni hai?") == "institute_info"
     assert classify_comment("O Level ka admission kaise hoga") == "institute_info"
     assert classify_comment("कोर्स की फीस कितनी है?") == "institute_info"
+    # personal_question: malik/vlogger se uski personal baat = koi reply nahi
+    assert classify_comment("Aap konse institute padhte ho ?") == "personal_question"
+    assert classify_comment("Aapka naam kya hai?") == "personal_question"
+    assert classify_comment("Bhai aap kahan rehte ho?") == "personal_question"
+    # Institute ki location = institute_info hi rahega (personal NAHI)
+    assert classify_comment("Kaithal me institute kahan hai?") == "institute_info"
     assert classify_comment("") == "other"
     print("intent self-check PASS")

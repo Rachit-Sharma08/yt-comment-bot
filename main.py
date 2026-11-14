@@ -173,8 +173,9 @@ def run(live=False):
                 # --- 4) Intent: comment ka label (rules pehle, LLM temp 0 fallback) ---
                 label = intent.classify_comment(text, "")
 
-                # --- 4a) criticism/spam par KABHI reply nahi (rule-based skip se alag) ---
-                if label in ("criticism", "spam"):
+                # --- 4a) criticism/spam/personal par KABHI reply nahi ---
+                # personal_question = malik/vlogger se uski personal baat
+                if label in ("criticism", "spam", "personal_question"):
                     db.save_reply(c["comment_id"], c["video_id"], text, "", "skipped", label)
                     skips[label] = skips.get(label, 0) + 1
                     logger.info("SKIP %s reason=%s text=%s", c["comment_id"], label, short)
