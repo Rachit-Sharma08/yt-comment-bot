@@ -62,8 +62,11 @@
 - **AI reply me jhooth ya jaankari banao mat.** Jawab video se pata na ho to
   bolo ki "dekh ke batata hoon". Abusive / hateful / spam comments par reply
   mat karo.
-- **LLM kabhi link, phone number, fees ya address khud generate nahi karega.**
-  Ye sab sirf `triggers.json` aur (aage) knowledge file se aayega.
+- **Fee, duration, address, phone, link reply me tabhi aa sakte hain jab wo
+  `knowledge/zedking_info.md` ke chunk me hubahu likhe hon.** LLM kabhi koi
+  number, fee, phone, address ya link apni taraf se nahi banayega.
+  **Validator ye check karega** (reply me har number/fee/phone/link/address
+  chunk me exact hona chahiye — warna reply discard).
 - **Reply ki language comment ki language jaisi hogi** — Devanagari Hindi ho to
   Devanagari Hindi, Roman Hinglish ho to Roman Hinglish, English ho to English.
 - **Jo jaankari video context me nahi hai wo andaze se nahi bolni** — na pata
