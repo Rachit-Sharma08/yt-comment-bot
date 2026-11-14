@@ -5,6 +5,7 @@
 import logging  # sab activity bot.log me jaayegi (keys kabhi nahi)
 import os  # bot.lock banane/mutane ke liye (O_EXCL = ek hi instance)
 import random  # emoji templates + reply delay + loop jitter dono me random
+import re  # unicode hyphens ko normal "-" me badalne ke liye
 import sys  # console encoding + exit code
 import time  # reply delay aur loop sleep ke liye
 from pathlib import Path  # STOP/lock files dhoondne ke liye
@@ -45,6 +46,10 @@ LOG_TEXT_LEN = 100  # log/print me comment text itna hi dikhega
 def _short(text):
     # Ek line me + 100 char tak — output saaf, log chhota
     return (text or "").replace("\n", " ")[:LOG_TEXT_LEN]
+
+
+# Special unicode hyphens (U+2010/2011/2013/2014) — inko normal "-" me badalte hain
+_UNI_HYPHEN_RE = re.compile("[‐‑–—]")
 
 
 def _post_failure(e):
@@ -221,6 +226,10 @@ def run(live=False):
                         print(f"[FAILED] {short}")
                         continue
                     counts["llm"] += 1
+
+        # --- Special unicode hyphens ko normal "-" me badal do ---
+        # (validator ke baad, db save/post se pehle — har reply par ek hi jagah)
+        reply = _UNI_HYPHEN_RE.sub("-", reply)
 
         # --- 6) Save karo: auto = YouTube par post, draft = sirf db ---
         # (emoji + trigger + llm + institute — sab ka reply yahin se hokar jaata hai)
