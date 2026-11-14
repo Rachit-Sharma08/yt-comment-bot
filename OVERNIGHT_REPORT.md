@@ -3,6 +3,37 @@
 - Date: 2026-11-15 00:57
 - Machine: Windows 11, Python 3.12.10
 - Sab tests mock/controlled hain: **real YouTube API call nahi hui, koi POST nahi hua**, secrets (.env/token.json/client_secret.json) nahi khole gaye.
+- Exception: Step 5 me 12 **real LLM (Groq) calls** hue — sirf reply quality check ke liye (YouTube API bilkul nahi, koi post nahi).
+
+## Summary (final verification run)
+
+| Step | Kya hua | Result |
+|---|---|---|
+| 1 | Mock layer — `FakeYouTube` + `FakeLLM`, `--mock` / `--mock-llm` | done |
+| 2 | 40-comment E2E (sirf mock) | 24 replies, 24/24 checks PASS, 0 decision mismatch |
+| 3 | Failure handling (quota / token / lock / STOP / 429) | 11/11 PASS |
+| 4 | Loop stability (repeat, backoff, duplicate) | 2/2 PASS |
+| 5 | Real LLM quality (12 Groq calls, 8s gap) | 12/12 reply, 0 hard fail, 0 expect miss |
+| 6 | `review.py --stats` / `--today` | 11/11 PASS |
+| 7 | `run_bot.bat` runner + Windows docs | 12/12 PASS |
+| 8 | README (flow, setup, modes, safety) | done |
+
+- Final run: E2E 24/24 · failures 11/11 · loop 2/2 · review 11/11 · runner 12/12 · real LLM 12/12 ·
+  self-checks (filters, intent, knowledge, triggers, db) sab PASS.
+- Real YouTube API call **0**, koi POST **0**, secrets (`.env` / `token.json` / `client_secret.json`) khole nahi gaye.
+
+<!-- STEP1:START -->
+## Step 1 - Mock layer
+
+- Status: **done** (commit a0e2b08)
+- `mock_youtube.py`: `FakeYouTube` (comments fetch / video info / post reply - post sirf
+  list me record, koi network call nahi) + `FakeLLM` (`fail_every` / `fail_first` se
+  failure scenario test karne ke liye)
+- `main.py` me naye flags: `--mock` (real YouTube ki jagah fake) aur `--mock-llm`
+  (fixed fake replies). `--mock-llm` bina `--mock` ke exit 2 karta hai - fake reply
+  real YouTube par na jaaye.
+- Real API call is step me bhi 0 hua.
+<!-- STEP1:END -->
 
 <!-- STEP2:START -->
 ## Step 2 — End-to-End: 40 comments (mock only)
@@ -59,7 +90,6 @@
 ### Failed cases
 
 Koi fail nahi — saare replies checks pass aur decisions expected.
-
 
 ### Notes
 
@@ -211,3 +241,4 @@ Reason:
   contact 10/day, link 15/day, 5 min interval, 20-60 sec delay).
 - Task Scheduler me kuch register nahi kiya - steps sirf WINDOWS_RUN.md me hain.
 <!-- STEP8:END -->
+
