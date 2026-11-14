@@ -541,3 +541,15 @@ A: Courses range from short-term (1-3 months) like CCC and BCC, to medium-term (
 **Note:** CCC course page (https://zedking.in/ccc-computer-course) par aur bhi FAQ questions dikhte hain — unke answers fetched markdown me nahi aaye: UNKNOWN - institute se confirm karein
 
 **Source:** https://zedking.in/ , https://zedking.in/admission , https://zedking.in/ccc-computer-course
+
+---
+
+## 7. Free study material (/study page)
+
+- **Page:** "Free Study Material & Mock Test — CCC & O Level Notes, MCQ, PDFs" (https://zedking.in/study)
+- **Kis ke liye:** CCC, O Level aur ECC ki exam preparation
+- **Free material:** chapter-wise notes, chapter-wise MCQ, model test papers, previous year questions, poora syllabus — sab free
+- **Online tests:** free mock tests (bina login/payment) — CCC full mock test, CCC/O Level/ECC chapter-wise tests, O Level theory (M1–M4) aur practical (PR1–PR4) tests
+- **Page ka claim:** "All tests are free — real exam screen, instant result with answers."
+
+**Source:** https://zedking.in/study

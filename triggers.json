@@ -6,9 +6,26 @@
       "video_ids": ["*"],
       "keywords": ["link", "guide", "लिंक", "गाइड"],
       "replies": [
-        "ZedKing ki study guide ke liye yahan jao: https://zedking.in/study — sab material ek jagah milega!",
-        "Haan bhai, pura study guide yahan hai: https://zedking.in/study — check kar lo.",
-        "Guide chahiye? Lo official link: https://zedking.in/study — sab kuch isi page par hai."
+        {
+          "language": "Roman Hinglish",
+          "text": "ZedKing ki study guide ke liye yahan jao: https://zedking.in/study — sab material ek jagah milega!"
+        },
+        {
+          "language": "Roman Hinglish",
+          "text": "Haan bhai, pura study guide yahan hai: https://zedking.in/study — check kar lo."
+        },
+        {
+          "language": "Roman Hinglish",
+          "text": "Guide chahiye? Lo official link: https://zedking.in/study — sab kuch isi page par hai."
+        },
+        {
+          "language": "English",
+          "text": "Here is the study guide: https://zedking.in/study — everything is in one place!"
+        },
+        {
+          "language": "Devanagari Hindi",
+          "text": "स्टडी गाइड यहाँ है: https://zedking.in/study — सारा मटेरियल एक जगह मिलेगा!"
+        }
       ]
     }
   ]

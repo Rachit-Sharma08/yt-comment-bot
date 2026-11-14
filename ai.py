@@ -63,6 +63,14 @@ def _detect_language(text):
         "hain", "liye", "mein", "chahiye", "karein", "karte", "karna",
         "kaisa", "pata", "sampark", "waqt", "kuch", "chal", "raha",
         "rahi", "karna", "kar", "mat", "abhi", "jaldi", "sirf",
+        # Common Hinglish words — inke bina "Bahut shukriya! Aise hi saath..."
+        # English detect ho jaata tha (E2E me 5 replies galat language check)
+        "shukriya", "bahut", "achha", "accha", "aise", "saath", "rahiye",
+        "bane", "mast", "yaar", "bhai", "bhi", "tha", "thi", "maine",
+        "hum", "konsa", "kaunsa", "kiya", "karwana", "batao", "bataiye",
+        "sawaal", "sawal", "padhai", "milega", "hoga", "rahe", "raho",
+        "jao", "yahan", "wahan", "khushi", "hoti", "hota", "banate",
+        "seekha", "lao", "ko",
     }
     words = set(re.findall(r"[a-z']+", text.lower()))
     if words & hinglish_markers:  # intersection khaali nahi = Hinglish mila

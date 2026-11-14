@@ -15,9 +15,26 @@ def _extract_urls(text):
     return re.findall(r"https?://[^\s\"')]+", text)
 
 
+def _reply_text(reply):
+    # Purana format (sirf string) aur naya format ({language, text}) dono chalein
+    return reply.get("text", "") if isinstance(reply, dict) else reply
+
+
+def _reply_lang(reply):
+    return reply.get("language", "") if isinstance(reply, dict) else ""
+
+
 def _host_allowed(host, domain):
     # host == domain ya uska subdomain (sub.zedking.in) — dono chalega
     return host == domain or host.endswith("." + domain)
+
+
+def _knowledge_url_ok(url):
+    # AGENTS.md policy: link sirf tab jab knowledge file ke source me hubahu likha ho
+    import knowledge  # local import — triggers.json load par hi chahiye
+    allowed = {u.lower().rstrip(".,)") for u in knowledge.allowed_source_urls()}
+    # shortcut: knowledge file missing ho to whitelist khali — tab sirf domain check
+    return not allowed or url.lower().rstrip(".,)") in allowed
 
 
 def _load():
@@ -27,13 +44,19 @@ def _load():
     allowed = [d.lower() for d in data.get("allowed_domains", [])]
     for trig in data.get("triggers", []):
         for reply in trig.get("replies", []):
-            for url in _extract_urls(reply):
+            for url in _extract_urls(_reply_text(reply)):
                 host = urlparse(url).netloc.lower()  # sirf domain nikalo
                 if not any(_host_allowed(host, d) for d in allowed):
                     # Galat domain = error abhi do, chup-chap baad me fail hone se pehle
                     raise ValueError(
                         f"triggers.json: trigger '{trig.get('id')}' ka reply me "
                         f"allowed domain ke bahar URL hai: {url}"
+                    )
+                if not _knowledge_url_ok(url):
+                    # Link knowledge file me nahi = policy violation, turant error
+                    raise ValueError(
+                        f"triggers.json: trigger '{trig.get('id')}' ka URL knowledge "
+                        f"file ke source me nahi hai: {url}"
                     )
     return data
 
@@ -54,6 +77,26 @@ def match_trigger(video_id, comment_text):
             # whole word match: "link" par "linkedin" NAHI pakde, Devanagari bhi chalega
             if re.search(r"\b" + re.escape(keyword.lower()) + r"\b", text):
                 replies = trig.get("replies", [])
-                if replies:
-                    return random.choice(replies)  # 2-3 variants me se random
+                if not replies:
+                    continue
+                tagged = [r for r in replies if _reply_lang(r)]
+                if not tagged:
+                    return random.choice([_reply_text(r) for r in replies])
+                # Comment ki language jaisa hi reply — English comment par
+                # Hinglish canned reply nahi (AGENTS.md language rule)
+                from ai import _detect_language  # local import — import cycle nahi
+                lang = _detect_language(comment_text)
+                same = [r for r in tagged if _reply_lang(r) == lang]
+                if not same:
+                    same = [r for r in tagged if _reply_lang(r) == "Roman Hinglish"] or tagged
+                return random.choice([_reply_text(r) for r in same])
     return None  # koi trigger nahi mila → LLM ko jaana padega
+
+
+if __name__ == "__main__":
+    # Offline self-check — domain + knowledge whitelist logic (koi network call nahi)
+    assert _host_allowed("sub.zedking.in", "zedking.in")
+    assert not _host_allowed("evil.com", "zedking.in")
+    assert _knowledge_url_ok("https://zedking.in/study")
+    assert not _knowledge_url_ok("https://zedking.in/fake-page")
+    print("triggers self-check PASS")
