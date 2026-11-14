@@ -115,6 +115,21 @@ def short_name(heading):
     return name or heading
 
 
+def main_phone():
+    """Institute ka MAIN number — contact section ke "Phone" line se (Step 3).
+
+    Spec: phone sirf file ke contact section ka main number — doosre
+    (mobile/landline) kabhi mat use. File me na mile to "" (crash nahi).
+    """
+    for c in load_chunks():
+        if "contact" not in c["heading"].lower():
+            continue
+        m = re.search(r"\*\*Phone[^*]*:\*\*\s*(\+91-\d{10})", c["text"])
+        if m:
+            return m.group(1)
+    return ""
+
+
 def load_chunks(force=False):
     """File ko chunks me todo (cache ke saath). Missing/broken file = [] (crash nahi).
 
@@ -245,4 +260,6 @@ if __name__ == "__main__":
     assert short_name("31. Python Programming Course in Kaithal — AI · Data Science · Django") == "Python Programming"  # AI code NAHI
     assert short_name("38. Tally Prime Course in Kaithal — GST · Accounting") == "Tally Prime"  # GST code NAHI
     assert all(c["short"] for c in chs)  # har chunk ke paas short ho
+    # Step 3: main number sirf contact section se (spec: doosre number nahi)
+    assert main_phone() == "+91-9416111612", main_phone()
     print("knowledge self-check PASS")

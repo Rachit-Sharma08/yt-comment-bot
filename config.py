@@ -156,6 +156,57 @@ COURSE_STOPWORDS = [
     "fees", "fee", "kitni", "kitna", "kitne", "kaise", "kya", "hai", "zedking",
 ]
 
+# --- Step 3: Fixed templates (LLM BILKUL nahi) — 3 cases x 3 languages x 2 variants ---
+# clarify  = course ka naam clear nahi (gate BLOCKED) — {A}/{B} = short_name
+# unknown  = jawab file me nahi / LLM fail / discard — {phone} = institute main number
+# no_course = comment me course ka naam hi na mile
+# Phone sirf knowledge file ke contact section se aata hai (knowledge.main_phone).
+# In templates me Koi link NAHI hai (link rule alag se Step 4).
+INSTITUTE_TEMPLATES = {
+    "clarify": {
+        "Roman Hinglish": [
+            "Aap kaunsa course keh rahe hain: {A} ya {B}? Bataiye, fee aur details bata denge.",
+            "Kaun sa course chahiye - {A} ya {B}? Batao, fee aur details bata dete hain.",
+        ],
+        "English": [
+            "Which course do you mean: {A} or {B}? Tell us and we will share the fee and details.",
+            "Did you mean {A} or {B}? Let us know, we will share the fee and full details.",
+        ],
+        "Devanagari Hindi": [
+            "आप कौन सा कोर्स कह रहे हैं: {A} या {B}? बताइए, फीस और डिटेल्स बता देंगे।",
+            "कौन सा कोर्स चाहिए - {A} या {B}? बताइए, फीस और डिटेल्स बता देते हैं।",
+        ],
+    },
+    "unknown": {
+        "Roman Hinglish": [
+            "Is baare me sahi jaankari ke liye please call karein: {phone}.",
+            "Sahi jaankari ke liye institute ko call kar lein: {phone}.",
+        ],
+        "English": [
+            "For the correct information on this, please call: {phone}.",
+            "Please call us for accurate details: {phone}.",
+        ],
+        "Devanagari Hindi": [
+            "इस बारे में सही जानकारी के लिए कृपया कॉल करें: {phone}।",
+            "सही जानकारी के लिए कृपया इन्हें कॉल करें: {phone}।",
+        ],
+    },
+    "no_course": {
+        "Roman Hinglish": [
+            "Aap kaunse course ke baare me pooch rahe hain? Course ka naam bataiye.",
+            "Kaun sa course jaanna hai? Course ka naam bata do, bata dete hain.",
+        ],
+        "English": [
+            "Which course are you asking about? Please tell us the course name.",
+            "What course do you want to know about? Please share the course name.",
+        ],
+        "Devanagari Hindi": [
+            "आप किस कोर्स के बारे में पूछ रहे हैं? कोर्स का नाम बताइए।",
+            "कौन सा कोर्स जानना है? कोर्स का नाम बताइए, बता देंगे।",
+        ],
+    },
+}
+
 # --- Criticism / scam wale comments — inka reply BILKUL nahi (abusive list se ALAG) ---
 # Gaali (ABUSE_WORDS) yahan NAHI hai — yahan sirf tareef-negative, waste, fraud ke shabd
 CRITICISM_WORDS = [
