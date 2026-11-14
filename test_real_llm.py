@@ -232,7 +232,10 @@ def main():
         f"Expectation miss: {expect_miss}\n"
         f"- Kis model ne jawab diya: {models}\n"
         "- Har case me 8 sec gap; 429 par ek hi retry (60 sec baad). "
-        "YouTube API call nahi hui — sirf LLM.\n\n"
+        "YouTube API call nahi hui — sirf LLM.\n"
+        "- Known cosmetic: contact-reply me LLM ka closing word (jaise "
+        "'Dhanyavaad') kabhi-kabhi contact block se pehle aa jaata hai — "
+        "facts aur links sahi hain.\n\n"
         "| ID | Type | Comment | Reply | Model | Auto checks | Expect |\n"
         "|---|---|---|---|---|---|---|\n" + "\n".join(rows)
     )
