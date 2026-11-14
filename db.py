@@ -121,6 +121,26 @@ def emoji_replies_today():
     return row[0]
 
 
+def contact_replies_today():
+    # Aaj kitne institute replies me phone/link gaya (draft ya posted) — daily cap
+    # (reason='institute' wale replies hi count; digits-normalized 10+ = contact)
+    import re  # sqlite me regexp nahi hai — Python me check kar lete hain
+    rows = _db().execute(
+        "SELECT reply FROM replies "
+        "WHERE reason = 'institute' AND status IN ('draft', 'posted') "
+        "AND date(created_at) = date('now')"
+    ).fetchall()
+    pat_url = re.compile(r"(?i)https?://|www\.|wa\.me")
+    count = 0
+    for (r,) in rows:
+        if not r:
+            continue
+        digits = re.sub(r"\D", "", r)  # phone ko formatting se azad karke
+        if pat_url.search(r) or len(digits) >= 10:
+            count += 1
+    return count
+
+
 def recent_replies(limit=20, status=None):
     # review.py ke liye: latest rows (status diya ho to sirf wahi, jaise "draft")
     # ORDER BY created_at DESC + rowid — same second ki rows ka order bhi stable rahe
