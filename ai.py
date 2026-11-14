@@ -7,6 +7,7 @@ import re  # language detect + reply validation ke liye regex
 import requests  # HTTP call ke liye — pehle se requirements.txt me hai, naya package nahi
 
 import config
+import filters  # LLM reply ko plain text (no markdown) me badalne ke liye
 
 TIMEOUT_SEC = 30  # API call 30 sec me na aaye to fail maan lo (infinite hang nahi)
 
@@ -128,7 +129,9 @@ def _call_groq(prompt, temperature=None):
         timeout=TIMEOUT_SEC,
     )
     resp.raise_for_status()  # 4xx/5xx aaya to exception — upar try/except catch karega
-    return resp.json()["choices"][0]["message"]["content"].strip()
+    # Plain text: YouTube comment plain hota hai — markdown markers hata do
+    raw = resp.json()["choices"][0]["message"]["content"].strip()
+    return filters.strip_markdown(raw)
 
 
 def _call_gemini(prompt, temperature=None):
@@ -156,7 +159,8 @@ def _call_gemini(prompt, temperature=None):
     reply = "\n".join(t for t in texts if t).strip()
     if not reply:  # khali reply = fail (thinking ne saara budget kha liya)
         raise ValueError("Gemini se khali reply aaya")
-    return reply
+    # Plain text: YouTube comment plain hota hai — markdown markers hata do
+    return filters.strip_markdown(reply)
 
 
 def make_reply(video_title, video_context, comment, provider=None, temperature=None):

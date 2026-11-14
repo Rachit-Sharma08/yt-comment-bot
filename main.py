@@ -227,9 +227,10 @@ def run(live=False):
                         continue
                     counts["llm"] += 1
 
-        # --- Special unicode hyphens ko normal "-" me badal do ---
-        # (validator ke baad, db save/post se pehle — har reply par ek hi jagah)
-        reply = _UNI_HYPHEN_RE.sub("-", reply)
+        # --- Special unicode hyphens normal "-" me + markdown hatao (plain text) ---
+        # (validator ke baad, db save/post se pehle — har reply par ek hi jagah:
+        #  LLM/institute reply ai.py me already stripped, yahan trigger/emoji cover)
+        reply = filters.strip_markdown(_UNI_HYPHEN_RE.sub("-", reply))
 
         # --- 6) Save karo: auto = YouTube par post, draft = sirf db ---
         # (emoji + trigger + llm + institute — sab ka reply yahin se hokar jaata hai)

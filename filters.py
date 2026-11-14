@@ -48,6 +48,26 @@ def emoji_kind(text):
     return "unknown"  # pehchana nahi — reply safe side par mat karo
 
 
+def strip_markdown(text):
+    """Reply ka markdown hata kar plain text banao (YouTube comment plain text hai).
+
+    **bold**, *italic*, __bold__, _italic_, `code`, '# heading', '- ' bullet,
+    [text](url) -> sirf text. Emoji aur normal punctuation waisa hi rehta hai.
+    """
+    t = text or ""
+    t = re.sub(r"\[([^\]\n]+)\]\([^)\n]*\)", r"\1", t)  # [text](url) -> text
+    t = re.sub(r"\*\*([^\n]+?)\*\*", r"\1", t)  # **bold** -> bold
+    t = re.sub(r"__([^\n]+?)__", r"\1", t)  # __bold__ -> bold
+    # *italic* / _italic_ — sirf paired markers (user_name jaise NAHI chhodte)
+    t = re.sub(r"(?<![*\w])\*([^*\n]+)\*(?!\*)", r"\1", t)
+    t = re.sub(r"(?<![_\w])_([^_\n]+)_(?!_)", r"\1", t)
+    t = re.sub(r"(?m)^\s*#+\s*", "", t)  # line-start "# heading" -> heading
+    t = re.sub(r"(?m)^\s*[-*]\s+", "", t)  # line-start "- bullet" -> bullet
+    t = t.replace("`", "")  # code-span markers, andar ka text rehta hai
+    t = t.replace("**", "").replace("__", "")  # akshe reh gaye bold markers
+    return t.strip()
+
+
 def should_skip(comment_text):
     """(skip?, reason) return karo. Skip = True to reply bilkul mat karo."""
     text = (comment_text or "").strip()
@@ -95,4 +115,13 @@ if __name__ == "__main__":
     assert should_skip("bkwwas") == (True, "criticism")
     assert should_skip("This scam video") == (True, "criticism")  # case-insensitive
     assert should_skip("nice video")[0] is False  # normal comment skip NAHI
+    # strip_markdown: markdown hato, emoji/normal text chhodo
+    assert strip_markdown("**Great** video!") == "Great video!"
+    assert strip_markdown("*italic* word") == "italic word"
+    assert strip_markdown("__bold__ and _und_") == "bold and und"
+    assert strip_markdown("`code` here") == "code here"
+    assert strip_markdown("# Heading\n- item\n- two") == "Heading\nitem\ntwo"
+    assert strip_markdown("[Click](https://x.com)") == "Click"
+    assert strip_markdown("user_name ❤️ 100% zyada") == "user_name ❤️ 100% zyada"
+    assert strip_markdown("2 * 3 = 6?") == "2 * 3 = 6?"  # normal punctuation bacha
     print("filters self-check PASS")
