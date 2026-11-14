@@ -71,6 +71,9 @@ def _detect_language(text):
         "sawaal", "sawal", "padhai", "milega", "hoga", "rahe", "raho",
         "jao", "yahan", "wahan", "khushi", "hoti", "hota", "banate",
         "seekha", "lao", "ko",
+        # Step 5 real-LLM test me mile: "Dekhta hoon, baad me batata hoon"
+        # English detect ho raha tha — inflected Hinglish forms add kiye
+        "dekhta", "hoon", "batata", "baad",
     }
     words = set(re.findall(r"[a-z']+", text.lower()))
     if words & hinglish_markers:  # intersection khaali nahi = Hinglish mila
@@ -624,6 +627,14 @@ def _clean_contact_part(reply):
     out = re.sub(r"\s{2,}", " ", out)
     out = re.sub(r"\s+([.,!?])", r"\1", out)
     out = out.strip(" ,.;:-")
+    # Sirf thanks/closing bacha ho ("Dhanyavaad", "Shubhkamnayein") to hata do —
+    # warna "Shubhkamnayein Call karein:" jaisa weird jod banta hai (Step 5 me mila)
+    if re.fullmatch(
+        r"(?i)(?:dhanyava+d|thanks|thank you|shukriya|shubhka?mna(?:yein|ein)?|"
+        r"best wishes|all the best|regards|god bless)[!., ]*",
+        out,
+    ):
+        return ""
     return out
 
 

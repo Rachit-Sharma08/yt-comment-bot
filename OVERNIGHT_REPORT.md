@@ -35,8 +35,8 @@
 | 18 | बहुत बढ़िया वीडियो | LLM | LLM | बहुत शुक्रिया! ऐसे ही साथ बने रहिए। | PASS |
 | 19 | Great job, keep it up | LLM | LLM | Thank you so much! Glad you liked it. | PASS |
 | 20 | Mast video yaar | LLM | LLM | Bahut shukriya! Aise hi saath bane rahiye. | PASS |
-| 21 | 🔥 | EMOJI | EMOJI | Dhanyavaad 🔥 | PASS |
-| 22 | 👍🏽 | EMOJI | EMOJI | So sweet, thank you 👍🏽 | PASS |
+| 21 | 🔥 | EMOJI | EMOJI | Thanks yaar 🔥 | PASS |
+| 22 | 👍🏽 | EMOJI | EMOJI | Thanks for the love 👍🏽 | PASS |
 | 23 | 😡👎 | SKIP | SKIP (negative_emoji) |  | — |
 | 24 | 👻 | SKIP | SKIP (unknown_emoji) |  | — |
 | 25 | Subscribe to my channel http://spam.xyz | SKIP | SKIP (contains_url_or_domain) |  | — |
@@ -102,3 +102,28 @@ Koi fail nahi — saare replies checks pass aur decisions expected.
 | 5 clean cycles: no crash, no duplicate | PASS | 10 comments, 8 posts, 0 duplicate |
 | Error cycles: backoff + no duplicate | PASS | network fails 2, failed rows 4, 0 duplicate |
 <!-- STEP4:END -->
+
+<!-- STEP5:START -->
+## Step 5 — Real LLM quality test
+
+- Date: 2026-11-15 01:25
+- Providers: Groq, Gemini | Model: `openai/gpt-oss-120b` / `gemini-3.6-flash`
+- Cases: 12 | Reply bana: 12 | Hard fail: 0 | Expectation miss: 0
+- Kis model ne jawab diya: Groq x12
+- Har case me 8 sec gap; 429 par ek hi retry (60 sec baad). YouTube API call nahi hui — sirf LLM.
+
+| ID | Type | Comment | Reply | Model | Auto checks | Expect |
+|---|---|---|---|---|---|---|
+| llm-01 | video | Bhai ye vlog kis camera se shoot kiya? | Dekhta hoon, baad me batata hoon! | Groq | PASS | OK |
+| llm-02 | video | Which camera did you use? | I'll check the details and let you know soon! | Groq | PASS | OK |
+| llm-03 | video | यह वीडियो किस कैमरे से शूट हुआ है? | देख कर बताता हूँ! | Groq | PASS | OK |
+| llm-04 | video | Is video me konsa mic use kiya? | Mic ka detail video me mention nahi hua, dekh ke batata hoon! | Groq | PASS | OK |
+| llm-05 | video | What editing software do you use? | I'll look into it and let you know! | Groq | PASS | OK |
+| llm-06 | video | Nice video bro | Thanks a lot! Glad you enjoyed the studio tour. | Groq | PASS | OK |
+| llm-07 | video | Bahut achha video tha bhai | Thanks yaar! Khush ho ke dekhne ka maza hi alag tha. | Groq | PASS | OK |
+| llm-08 | video | बहुत बढ़िया वीडियो | बहुत धन्यवाद, आपका समर्थन हमारे लिए प्रेरणा है! 🙏 | Groq | PASS | OK |
+| llm-09 | institute | CCC course ki fees kitni hai? | ZedKing ke CCC (NIELIT) course ki fee ₹6,000 hai, 3 mahine ka offline program.  / Shubhkamnayein. / Poori detail yahan dekhein: https://zedking.in/ccc-computer-course | Groq | PASS | OK |
+| llm-10 | institute | Digital marketing course ki duration kitni hai? | Digital Marketing Course ki duration 6 mahine hai. Fee ₹15,000, eligibility 10th pass ya usse upar.  / ZedKing team. / Full details yahan dekh sakte hain: https://zedking.in/digital-marketing-course | Groq | PASS | OK |
+| llm-11 | institute | Digital marketing course ki eligibility kya hai? | Digital Marketing course ke liye eligibility 10th pass ya uske upar hai. Offline mode me certificate dete hain.  / Dhanyavaad! / Poori detail yahan dekhein: https://zedking.in/digital-marketing-course | Groq | PASS | OK |
+| llm-12 | institute | Institute ka address kya hai? | Shubhkamnayein Call karein: +91-9416111612. Pata: Kaithal - Pundri - Karnal Rd, near New Bus Stand, opp. Hanuman Vatika, Friends Colony, Kaithal, Haryana 136027, India. Admission: https://zedking.in/admission | Groq | PASS | OK |
+<!-- STEP5:END -->
