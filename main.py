@@ -17,8 +17,7 @@ import ai  # LLM reply (Groq -> Gemini fallback) + answer_institute
 import config  # MODE, delays, limits, emoji lists
 import db  # saara database code db.py me
 import filters  # rule-based skip + emoji_kind
-import intent  # comment ka label: institute_info / video_question / praise / ...
-import knowledge  # knowledge file ke chunks + search (institute replies ke liye)
+import pipeline  # comment -> reply ka EK path (test_institute bhi yahi use karta hai)
 import triggers  # keyword canned replies
 import youtube  # official YouTube Data API calls
 
@@ -175,57 +174,38 @@ def run(live=False):
             if reply:
                 counts["trigger"] += 1
             else:
-                # --- 4) Intent: comment ka label (rules pehle, LLM temp 0 fallback) ---
-                label = intent.classify_comment(text, "")
-
-                # --- 4a) criticism/spam/personal par KABHI reply nahi ---
-                # personal_question = malik/vlogger se uski personal baat
-                if label in ("criticism", "spam", "personal_question"):
-                    db.save_reply(c["comment_id"], c["video_id"], text, "", "skipped", label)
-                    skips[label] = skips.get(label, 0) + 1
-                    logger.info("SKIP %s reason=%s text=%s", c["comment_id"], label, short)
-                    print(f"[SKIP] ({label}) {short}")
-                    continue
-
-                # --- 4b) Institute sawaal: mode off = kuch post nahi, sirf skipped save ---
-                if label == "institute_info" and not config.INSTITUTE_MODE:
-                    db.save_reply(c["comment_id"], c["video_id"], text, "", "skipped",
-                                  "institute_mode_off")
-                    skips["institute_mode_off"] = skips.get("institute_mode_off", 0) + 1
-                    logger.info("SKIP %s reason=institute_mode_off text=%s",
-                                c["comment_id"], short)
-                    print(f"[SKIP] (institute_mode_off) {short}")
-                    continue
-
-                if label == "institute_info":
-                    # --- 4c) Institute reply: knowledge chunks se (validator ai.py me) ---
-                    chunks = knowledge.search(text, top_k=3)  # top 3 relevant chunks
-                    reply = ai.answer_institute(text, chunks)
-                    source = "institute"
-                    if reply is None:
-                        # Validator ne phenka ya LLM fail — failed save, aage badho
-                        db.save_reply(c["comment_id"], c["video_id"], text, "", "failed",
-                                      "institute_fail")
-                        counts["failed"] += 1
-                        logger.warning("FAILED(institute) %s text=%s", c["comment_id"], short)
-                        print(f"[FAILED] {short}")
-                        continue
-                    counts["institute"] += 1
-                else:
-                    # --- 4d) Baaki labels (video_question/praise/other): pehle jaisa LLM path ---
+                # --- 4) Reply ka path: pipeline.handle_comment (Step 6 — test_institute
+                # bhi Yahi function use karta hai, dono ka reply hamesha same) ---
+                def _video_ctx():
+                    # Video info sirf normal (non-institute) path me chahiye
                     title, description = youtube.get_video_info(c["video_id"])
                     notes = youtube.get_video_notes(c["video_id"])  # video_notes/<id>.md ho to
-                    context = (description + "\n\n" + notes).strip()  # dono ka combination
-                    reply = ai.make_reply(title, context, text)  # validation andar hi hoti hai
-                    source = "llm"
-                    if reply is None:
-                        # --- 5) LLM fail / validation fail -> status "failed" ---
-                        db.save_reply(c["comment_id"], c["video_id"], text, "", "failed", "llm_fail")
+                    return title, (description + "\n\n" + notes).strip()
+
+                label, reply, _chunks, reason = pipeline.handle_comment(
+                    text, video_ctx=_video_ctx,
+                    institute_enabled=config.INSTITUTE_MODE,
+                )
+                source = "institute" if label == "institute_info" else "llm"
+
+                if reason:
+                    # reason = skip (criticism/spam/personal/mode off) ya fail
+                    status = "skipped" if reason in (
+                        "criticism", "spam", "personal_question", "institute_mode_off"
+                    ) else "failed"
+                    db.save_reply(c["comment_id"], c["video_id"], text, "", status, reason)
+                    skips[reason] = skips.get(reason, 0) + 1
+                    if status == "skipped":
+                        logger.info("SKIP %s reason=%s text=%s", c["comment_id"], reason, short)
+                        print(f"[SKIP] ({reason}) {short}")
+                    else:
                         counts["failed"] += 1
-                        logger.warning("FAILED %s text=%s", c["comment_id"], short)
+                        logger.warning("FAILED %s reason=%s text=%s",
+                                       c["comment_id"], reason, short)
                         print(f"[FAILED] {short}")
-                        continue
-                    counts["llm"] += 1
+                    continue
+
+                counts[source] += 1
 
         # --- Special unicode hyphens normal "-" me + markdown hatao (plain text) ---
         # (validator ke baad, db save/post se pehle — har reply par ek hi jagah:
