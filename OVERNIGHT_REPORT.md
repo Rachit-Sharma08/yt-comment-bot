@@ -35,8 +35,8 @@
 | 18 | बहुत बढ़िया वीडियो | LLM | LLM | बहुत शुक्रिया! ऐसे ही साथ बने रहिए। | PASS |
 | 19 | Great job, keep it up | LLM | LLM | Thank you so much! Glad you liked it. | PASS |
 | 20 | Mast video yaar | LLM | LLM | Bahut shukriya! Aise hi saath bane rahiye. | PASS |
-| 21 | 🔥 | EMOJI | EMOJI | Appreciate it 🔥 | PASS |
-| 22 | 👍🏽 | EMOJI | EMOJI | Shukriya! 👍🏽 | PASS |
+| 21 | 🔥 | EMOJI | EMOJI | Dhanyavaad 🔥 | PASS |
+| 22 | 👍🏽 | EMOJI | EMOJI | So sweet, thank you 👍🏽 | PASS |
 | 23 | 😡👎 | SKIP | SKIP (negative_emoji) |  | — |
 | 24 | 👻 | SKIP | SKIP (unknown_emoji) |  | — |
 | 25 | Subscribe to my channel http://spam.xyz | SKIP | SKIP (contains_url_or_domain) |  | — |
@@ -67,3 +67,25 @@ Koi fail nahi — saare replies checks pass aur decisions expected.
 - Institute replies draft hain kyunki `CHANNEL_PROFILE=personal` default hai; `zedking` profile par hi live post hote hain.
 - Emoji-only comments ki koi language nahi hoti, isliye unke language check `n/a` hain.
 <!-- STEP2:END -->
+
+<!-- STEP3:START -->
+## Step 3 — Failure handling (mock only)
+
+**Setup:** har scenario alag temp DB (`ytbot_failures.db`), `FakeYouTube` + `FakeLLM`, koi real YouTube/LLM call nahi, token.json ko chheda nahi (mock).
+
+**Result:** 11/11 scenarios PASS
+
+| Scenario | Result | Detail |
+|---|---|---|
+| LLM 429 -> failed, agle run me retry | PASS | pehla run failed/llm_fail, doosra run posted |
+| Post fail -> failed (posted nahi) + no duplicate | PASS | row failed/post_error, agle run me skip |
+| Fetch par 403 quotaExceeded -> aaj ke baaki runs skip | PASS | quota 8000/8000 |
+| Post par 403 quotaExceeded -> run rukta hai + day skip | PASS | q1 failed/post_quota, q2 process nahi hua |
+| Local QUOTA_LIMIT -> day skip | PASS | quota 8000/8000 |
+| Quota detector + network backoff (60s..15min) | PASS | 403 quotaExceeded alag, rateLimitExceeded alag |
+| STOP mid-sleep -> turant loop band | PASS | 1.0s me ruk gaya (10s sleep) |
+| Loop: STOP par band + quota par run skip | PASS | STOP -> exit, quota -> run 0 baar |
+| bot.lock: doosra instance band, stale lock clear | PASS | second instance False, stale lock acquire True |
+| invalid_grant -> TokenExpiredError | PASS | token.json ko chheda nahi (mock) |
+| Token expire -> exit code 3 + exact message | PASS | Token expire ho gaya. token.json delete karke python main.py --once chalao aur dobara login karo. |
+<!-- STEP3:END -->

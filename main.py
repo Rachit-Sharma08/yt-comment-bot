@@ -25,6 +25,12 @@ import mock_youtube  # --mock / --mock-llm: test ke liye fake YouTube + fake LLM
 # Kill switch: is folder me "STOP" naam ki file ho to post BAND + run turant band
 STOP_FILE = Path(__file__).parent / "STOP"
 
+# Token expire (invalid_grant) par user ko bilkul yahi message dikhana hai
+TOKEN_EXPIRED_MSG = (
+    "Token expire ho gaya. token.json delete karke python main.py --once chalao "
+    "aur dobara login karo."
+)
+
 # Lock file: ek hi instance chale (do bot ek saath reply na karein)
 LOCK_FILE = Path(__file__).parent / "bot.lock"
 # Loop5 min par chalta hai — 30 min kuch na karna = purana instance mar gaya
@@ -53,16 +59,51 @@ _UNI_HYPHEN_RE = re.compile("[‐‑–—]")
 
 
 def _post_failure(e):
-    # (reason, stop_run) — 403/quota/rate wale error par run wahin rok do
+    # (reason, stop_run) — quota/rate par run rok do, baaki errors par aage badho
+    if youtube.quota_exceeded(e):  # 403 quotaExceeded = aaj ka quota khatam
+        db.mark_quota_exhausted(config.QUOTA_LIMIT)  # loop aaj ke baaki runs skip karega
+        return "post_quota", True
     status = getattr(getattr(e, "resp", None), "status", None)
-    if status in (403, 429):  # Google API: quotaExceeded / rateLimitExceeded
-        return f"post_{status}", True
+    if status == 429:  # rateLimitExceeded — thodi der baad retry
+        return "post_rate", True
+    if status == 403:  # commentsDisabled/forbidden — sirf ye comment fail, run chalta rahe
+        return "post_forbidden", False
     low = str(e).lower()
-    if "quota" in low:  # apna QUOTA_LIMIT wala error ya API ka quotaExceeded
+    if "quota" in low:  # apna QUOTA_LIMIT wala error
+        db.mark_quota_exhausted(config.QUOTA_LIMIT)
         return "post_quota", True
     if "rate" in low and "limit" in low:  # "generate" jaise shabd se false-positive na ho
         return "post_rate", True
     return "post_error", False  # baaki errors — failed save karke aage badho
+
+
+def _sleep_until_stop(seconds):
+    # Sleep chhote chunks me — beech me STOP aaye to turant False (loop band)
+    end = time.time() + max(0.0, seconds)
+    while time.time() < end:
+        if STOP_FILE.exists():
+            return False
+        time.sleep(min(1.0, end - time.time()))
+    return not STOP_FILE.exists()
+
+
+def _is_network_error(e):
+    # Connection/timeout/DNS errors (built-in + requests/urllib3/socket) ya Google 5xx
+    if isinstance(e, (ConnectionError, TimeoutError)):
+        return True
+    if getattr(getattr(e, "resp", None), "status", 0) >= 500:
+        return True
+    return (type(e).__module__ or "").startswith(("requests.", "urllib3.", "socket."))
+
+
+def _backoff_seconds(prev):
+    # Network backoff: 60s se shuru, har fail par double, max 15 min
+    return min(15 * 60, max(60, int(prev) * 2))
+
+
+def _loop_sleep_seconds():
+    # Normal interval + jitter: 5 min ± 30 sec (pattern na lage)
+    return config.CHECK_INTERVAL_MIN * 60 + random.uniform(-30, 30)
 
 
 def _acquire_lock():
@@ -115,7 +156,19 @@ def run(live=False):
         return
 
     # --- 1) Naye comments lao (too_old/already_replied youtube.py khud db me save kar chuka) ---
-    comments, fetch_skips = youtube.fetch_new_comments(max_results=50)
+    try:
+        comments, fetch_skips = youtube.fetch_new_comments(max_results=50)
+    except youtube.QuotaExceededError as e:
+        # Local QUOTA_LIMIT khatam — aaj ke baaki runs skip
+        db.mark_quota_exhausted(config.QUOTA_LIMIT)
+        print(f"{e} — aaj ke baaki runs skip.")
+        return
+    except Exception as e:
+        if youtube.quota_exceeded(e):  # YouTube ka 403 quotaExceeded
+            db.mark_quota_exhausted(config.QUOTA_LIMIT)
+            print("YouTube quota khatam (403) — aaj ke baaki runs skip.")
+            return
+        raise  # token/network error — upar wala handler dekhega
     skips = dict(fetch_skips)  # is run ke saare skip reasons isi dict me count hote hain
     total_seen = len(comments) + sum(fetch_skips.values())  # API se kitne naye mile
     print(f"Comments mile: {total_seen} "
@@ -226,9 +279,12 @@ def run(live=False):
                 break
             if posted_this_run > 0:
                 # do replies ke beech random 20-60 sec gap (spam policy)
-                time.sleep(
-                    random.randint(config.REPLY_DELAY_MIN_SEC, config.REPLY_DELAY_MAX_SEC)
+                delay = random.randint(
+                    config.REPLY_DELAY_MIN_SEC, config.REPLY_DELAY_MAX_SEC
                 )
+                if not _sleep_until_stop(delay):
+                    print("STOP file mila — run turant band.")
+                    break
             try:
                 youtube.post_reply(c["comment_id"], reply)
             except Exception as e:
@@ -275,6 +331,7 @@ def run(live=False):
 
 def loop_mode(live):
     # Har CHECK_INTERVAL_MIN minute me ek run, +/- 30 sec jitter (pattern na lage)
+    backoff = 0  # network fail par badhta hai, successful run par reset
     while True:
         try:
             if STOP_FILE.exists():
@@ -285,16 +342,27 @@ def loop_mode(live):
                 print(f"Quota {config.QUOTA_LIMIT} paar — aaj ke baaki runs skip.")
             else:
                 run(live)
-        except Exception:
-            # Ek run fail — log karke agla chalne do (bot kabhi na mare)
-            logger.exception("Loop run fail — agla run chalega")
-            print("Run fail (poora error bot.log me) — agla run chalta rahega.")
+                backoff = 0  # run chal gaya — backoff reset
+        except youtube.TokenExpiredError:
+            raise  # token expire = loop band, main() exit code 3 dega
+        except Exception as e:
+            if youtube.quota_exceeded(e) or isinstance(e, youtube.QuotaExceededError):
+                # Aaj ka quota khatam — marker set, aage koi API call nahi
+                db.mark_quota_exhausted(config.QUOTA_LIMIT)
+                print("YouTube quota khatam — aaj ke baaki runs skip.")
+                backoff = 0
+            elif _is_network_error(e):
+                backoff = _backoff_seconds(backoff)
+                logger.warning("Network error — %d sec baad retry: %s", backoff, e)
+                print(f"Network error — {backoff} sec baad retry.")
+            else:
+                # Koi aur run fail — log karke agla chalne do (bot kabhi na mare)
+                logger.exception("Loop run fail — agla run chalega")
+                print("Run fail (poora error bot.log me) — agla run chalta rahega.")
+                backoff = 0
         _touch_lock()  # instance zinda hai — lock ki mtime fresh
-        try:
-            # Interval + jitter: 5 min ± 30 sec
-            time.sleep(config.CHECK_INTERVAL_MIN * 60 + random.uniform(-30, 30))
-        except KeyboardInterrupt:
-            print("\nCtrl+C — loop band.")
+        if not _sleep_until_stop(backoff or _loop_sleep_seconds()):
+            print("STOP file mila — loop band.")
             break
 
 
@@ -329,6 +397,10 @@ def main():
             loop_mode(live)
         else:
             run(live=live)
+    except youtube.TokenExpiredError:
+        # token.json revoke/expire — browser se dobara login hi ek raasta hai
+        print(TOKEN_EXPIRED_MSG)
+        sys.exit(3)
     finally:
         _release_lock()  # Ctrl+C/exception par bhi lock chhoot jaaye (stale na bane)
 

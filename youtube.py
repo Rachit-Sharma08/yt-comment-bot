@@ -21,6 +21,7 @@ import os  # token.json exist check ke liye
 from datetime import datetime, timezone  # comment ki age (purana/naya) nikalne ke liye
 from pathlib import Path  # video_notes/<video_id>.md padhne ke liye
 
+from google.auth.exceptions import RefreshError  # invalid_grant = token revoke/expire
 from google.auth.transport.requests import Request  # expired token ko refresh karne ke liye
 from google.oauth2.credentials import Credentials  # saved token (token.json) padhne ke liye
 from google_auth_oauthlib.flow import InstalledAppFlow  # naya OAuth login (browser)
@@ -44,6 +45,26 @@ _service = None
 LIVE = False
 
 
+class TokenExpiredError(Exception):
+    """token.json ka refresh token invalid/revoke ho gaya — dobara login chahiye."""
+
+
+class QuotaExceededError(RuntimeError):
+    """Aaj ka local QUOTA_LIMIT khatam — bot aaj ke liye ruk jaata hai."""
+
+
+def quota_exceeded(e):
+    """True = YouTube ne 403 quotaExceeded diya (aaj ka quota khatam).
+
+    rateLimitExceeded (429/403) isme nahi aata — wo thodi der ka rate limit hai.
+    """
+    if getattr(getattr(e, "resp", None), "status", None) != 403:
+        return False
+    body = getattr(e, "content", b"") or b""
+    text = body.decode("utf-8", "ignore") if isinstance(body, bytes) else str(body)
+    return "quotaexceeded" in text.lower() or "quota exceeded" in text.lower()
+
+
 def save_token(creds):
     # Token ko file me save karo — print NAHI, sirf file me
     with open("token.json", "w", encoding="utf-8") as f:
@@ -57,7 +78,13 @@ def get_credentials():
         if creds.valid:
             return creds  # token abhi bhi valid hai — browser BILKUL nahi khulega
         if creds.refresh_token:
-            creds.refresh(Request())  # expired — bina browser ke refresh ho jaayega
+            try:
+                creds.refresh(Request())  # expired — bina browser ke refresh ho jaayega
+            except RefreshError as e:
+                # invalid_grant = token revoke/expire — browser se dobara login zaroori
+                if "invalid_grant" in str(e).lower():
+                    raise TokenExpiredError("token.json invalid_grant") from e
+                raise
             save_token(creds)  # refreshed token wapas file me save
             return creds
 
@@ -80,7 +107,7 @@ def _ensure_quota(cost):
     # Call se PEHLE check: aaj ka budget is call ke baad bhi bacha rahega?
     used = db.quota_used_today()
     if used + cost > config.QUOTA_LIMIT:
-        raise RuntimeError(
+        raise QuotaExceededError(
             f"Quota khatam: aaj {used} units kharch, limit {config.QUOTA_LIMIT} — "
             "aaj ke liye bot ruk jaayega (kal reset hoga)"
         )

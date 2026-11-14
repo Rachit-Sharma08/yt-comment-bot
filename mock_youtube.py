@@ -115,12 +115,15 @@ class FakeYouTube:
 class FakeLLM:
     """ai/intent ke LLM calls ki jagah fixed replies — free-tier limit nahi lagti."""
 
-    def __init__(self, fail_every=0):
+    def __init__(self, fail_every=0, fail_first=0):
         self.reply_calls = 0
         self.fail_every = fail_every  # har Nth reply call par None (429 jaisa)
+        self.fail_first = fail_first  # pehle N reply calls fail (retry test)
 
     def _reply_fails(self):
         self.reply_calls += 1
+        if self.reply_calls <= self.fail_first:
+            return True
         return bool(self.fail_every and self.reply_calls % self.fail_every == 0)
 
     def classify(self, text):

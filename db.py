@@ -48,14 +48,19 @@ def init_db():
 
 
 def already_done(comment_id):
-    """Sirf FINAL statuses = done (posted/skipped/failed). Draft row = NOT done.
+    """Sirf FINAL statuses = done. Draft = NOT done.
+
+    - posted / skipped  = hamesha done
+    - failed + post_*   = done (post ho chuka ya ho sakta tha — dobara bhejna = duplicate)
+    - failed + baaki    = NOT done (LLM 429/network fail — agle run me retry hona chahiye)
 
     Draft rows har run me dobara process hoti hain — save_reply ka INSERT OR REPLACE
     usi comment_id ki row ko update karta hai, isliye duplicate row NAHI banti.
     """
     cur = _db().execute(
         "SELECT 1 FROM replies WHERE comment_id = ? "
-        "AND status IN ('posted', 'skipped', 'failed')",
+        "AND (status IN ('posted', 'skipped') "
+        "     OR (status = 'failed' AND reason LIKE 'post_%'))",
         (comment_id,),
     )
     return cur.fetchone() is not None
@@ -108,6 +113,20 @@ def quota_used_today():
         "SELECT units_used FROM quota WHERE date = ?", (today,)
     ).fetchone()
     return row[0] if row else 0
+
+
+def mark_quota_exhausted(limit):
+    """YouTube ne 403 quotaExceeded diya — aaj ke liye local counter limit par set.
+
+    Iske baad loop ka quota check khud hi aaj ke baaki runs skip kar dega.
+    """
+    today = datetime.now().strftime("%Y-%m-%d")
+    _db().execute(
+        "INSERT INTO quota (date, units_used) VALUES (?, ?) "
+        "ON CONFLICT(date) DO UPDATE SET units_used = excluded.units_used",
+        (today, limit),
+    )
+    _db().commit()
 
 
 def emoji_replies_today():
@@ -182,12 +201,22 @@ if __name__ == "__main__":
     assert not already_done("smoke_test"), "draft row ko done nahi hona chahiye"
     save_reply("smoke_test", "vid1", "hi", "hello2", "posted", "selfcheck")
     assert already_done("smoke_test"), "posted row done honi chahiye"
+    # LLM fail = retry hona chahiye (done NAHI)
+    save_reply("smoke_test", "vid1", "hi", "", "failed", "llm_fail")
+    assert not already_done("smoke_test"), "llm_fail ko retry hona chahiye"
+    # Post fail = done (dobara post = duplicate)
+    save_reply("smoke_test", "vid1", "hi", "hello", "failed", "post_error")
+    assert already_done("smoke_test"), "post_error dobara nahi jaana chahiye"
     # Dobara save par PURANI row hi update honi chahiye — duplicate row nahi
     n = _db().execute(
         "SELECT COUNT(*) FROM replies WHERE comment_id = 'smoke_test'"
     ).fetchone()[0]
     assert n == 1, "duplicate row ban gayi!"
     assert not already_done("no_such_comment"), "false positive"
+    # Quota marker: aaj ka counter limit par
+    mark_quota_exhausted(8000)
+    assert quota_used_today() == 8000, "quota marker kaam nahi kiya"
     _db().execute("DELETE FROM replies WHERE comment_id = 'smoke_test'")
+    _db().execute("DELETE FROM quota")
     _db().commit()
     print("db.py self-check PASS")
