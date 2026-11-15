@@ -80,9 +80,18 @@ def _detect_language(text):
         "dekhta", "hoon", "batata", "baad",
         # Institute contact reply ("Hamara address", "Dakhila yahan")
         "hamara", "hamari", "humara", "humari", "humko", "humein", "dakhila",
+        # Step 1 (naye): short Hinglish comments pakadne ke liye —
+        # "Kaha par h centre ?", "Editing vaigara ka koi course hota h yaha par?"
+        "kaha", "kahan", "hote", "wale", "wala", "vaigara", "koi", "yaha",
+        "par", "pe", "h", "me",
     }
+    # Weak markers — ye AKELA English bhi ho sakte hain ("Tell me", "h"),
+    # isliye sirf ye mile to English hi maano. Baaki sab strong.
+    weak = {"me", "par", "pe", "h"}
     words = set(re.findall(r"[a-z']+", text.lower()))
-    if words & hinglish_markers:  # intersection khaali nahi = Hinglish mila
+    hits = words & hinglish_markers
+    # Rule: 2+ markers = Hinglish, ya 1 strong marker = Hinglish, warna English
+    if len(hits) >= 2 or (hits - weak):
         return "Roman Hinglish"
     return "English"
 
