@@ -27,6 +27,9 @@ _SECRET_RE = re.compile(r"(?i)\bsk-[a-z0-9]{10,}\b|api[\s-]?key|bearer\s|passwor
 
 # Personal-identity claims — bot pehle person me apne baare me nahi bolega (AGENTS rule)
 # "main padh / mai padh / I study / I am a student / मैं पढ़" jaise phrases = discard
+# Devanagari script check (comment vs reply)
+_DEV_RE = re.compile(r"[\u0900-\u097F]")
+
 _PERSONAL_CLAIM_RE = re.compile(
     r"(?i)\b(?:main|mai|i)\s+(?:padh\w*|student|study)\b"
     r"|\bi(?:'|\u2019)?m\s+(?:a\s+)?student\b"
@@ -146,7 +149,7 @@ def _build_prompt(video_title, video_context, comment):
     )
 
 
-def _validate_reply(reply):
+def _validate_reply(reply, comment=None):
     # Reply me URL/phone/secret/personal claim/internal word mila to False - caller ko None return karna hai
     if _URL_RE.search(reply):
         return False, "URL/link"
@@ -167,6 +170,13 @@ def _validate_reply(reply):
     for p in config.AI_LIKE_PHRASES:
         if p in low:
             return False, f"AI jaisa phrase: {p}"
+    # Script match: Devanagari comment ka reply bhi Devanagari hona chahiye
+    # (aur Roman comment ka reply Roman — mixed/script galat reply post nahi hona chahiye)
+    if comment is not None:
+        want_dev = bool(_DEV_RE.search(comment))
+        got_dev = bool(_DEV_RE.search(reply))
+        if want_dev != got_dev:
+            return False, "script mismatch (comment aur reply ka script alag)"
     return True, ""
 
 
@@ -233,7 +243,7 @@ def make_reply(video_title, video_context, comment, provider=None, temperature=N
     if provider in (None, "groq"):
         try:
             reply = _call_groq(prompt, temperature)
-            ok, why = _validate_reply(reply) if reply else (False, "khali reply")
+            ok, why = _validate_reply(reply, comment) if reply else (False, "khali reply")
             if ok:
                 LAST_MODEL = "Groq"
                 return reply
@@ -245,7 +255,7 @@ def make_reply(video_title, video_context, comment, provider=None, temperature=N
     if provider in (None, "gemini"):
         try:
             reply = _call_gemini(prompt, temperature)
-            ok, why = _validate_reply(reply) if reply else (False, "khali reply")
+            ok, why = _validate_reply(reply, comment) if reply else (False, "khali reply")
             if ok:
                 LAST_MODEL = "Gemini"
                 return reply
@@ -368,7 +378,7 @@ def answer_fact(fact_text, comment):
         if not out:
             continue
         reply = filters.strip_markdown(out)
-        ok, why = _validate_reply(reply)
+        ok, why = _validate_reply(reply, comment)
         if not ok:
             logger.warning("fact reply discard (%s): %s", why, reply[:120])
             continue

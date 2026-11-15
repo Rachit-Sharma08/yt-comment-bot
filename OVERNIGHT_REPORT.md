@@ -36,38 +36,38 @@
 <!-- STEP1:END -->
 
 <!-- STEP2:START -->
-## Step 2 — End-to-End: 40 comments (mock only)
+## Step 2 — End-to-End: 43 comments (mock only)
 
 **Setup:** `MODE=auto` + `live=True` (sirf test process me), `FakeYouTube` + `FakeLLM`, `time.sleep` 0, live cap 100 (runtime). `CHANNEL_PROFILE` default `personal` hai, isliye institute replies **draft** me gaye (safety rule) — koi real post nahi.
 
-**Result:** 40 comments, 24 replies, 24 replies ke saare checks PASS, 0 FAIL, 0 decision mismatch.
+**Result:** 43 comments, 20 replies, 20 replies ke saare checks PASS, 0 FAIL, 0 decision mismatch.
 
 ### Decisions table
 
 | # | Comment | Expected | Decision | Reply | Checks |
 |---|---|---|---|---|---|
-| 01 | CCC course ki fees kitni hai? | INSTITUTE | INSTITUTE (draft) | Course ki fees aur details ke liye institute ko call karein: +91-9416111612. | PASS |
-| 02 | डिजिटल मार्केटिंग कोर्स की फीस कितनी है? | INSTITUTE | INSTITUTE (draft) | कोर्स की फीस और डिटेल्स के लिए इंस्टीट्यूट को कॉल करें: +91-9416111612। | PASS |
-| 03 | What is the duration of the O Level course? | INSTITUTE | INSTITUTE (draft) | For course fees and details, please call the institute: +91-9416111612. | PASS |
-| 04 | Address kya hai institute ka? | INSTITUTE | INSTITUTE (draft) | Admission aur address ki jaankari ke liye institute ko call karein: +91-9416111612. | PASS |
-| 05 | Admission kaise le? 10th pass hoon. | INSTITUTE | INSTITUTE (draft) | Admission aur address ki jaankari ke liye institute ko call karein: +91-9416111612. | PASS |
-| 06 | Digital marketing course ke baare me batao | INSTITUTE | INSTITUTE (draft) | Course ki fees aur details ke liye institute ko call karein: +91-9416111612. | PASS |
-| 07 | Python course ki eligibility kya hai? | INSTITUTE | INSTITUTE (draft) | Course ki fees aur details ke liye institute ko call karein: +91-9416111612. | PASS |
-| 08 | Bitcoin trading course karwana? | INSTITUTE | INSTITUTE (draft) | Course ki fees aur details ke liye institute ko call karein: +91-9416111612. | PASS |
-| 09 | Tally Prime course kitne mahine ka hai? | INSTITUTE | INSTITUTE (draft) | Course ki fees aur details ke liye institute ko call karein: +91-9416111612. | PASS |
-| 10 | फीस कितनी है? | INSTITUTE | INSTITUTE (draft) | कोर्स की फीस और डिटेल्स के लिए इंस्टीट्यूट को कॉल करें: +91-9416111612। | PASS |
-| 11 | Bhai ye vlog kis camera se shoot kiya? | LLM | LLM | Sawaal ke liye shukriya! Main dekh kar bata dunga. | PASS |
-| 12 | Which camera did you use? | LLM | LLM | Thanks for asking! I will check and let you know. | PASS |
-| 13 | यह वीडियो कहां शूट हुआ है? | LLM | LLM | शुक्रिया सवाल के लिए! मैं देखकर बता दूंगा। | PASS |
-| 14 | Is video me konsa mic use kiya? | LLM | LLM | Sawaal ke liye shukriya! Main dekh kar bata dunga. | PASS |
-| 15 | What editing software do you use? | LLM | LLM | Thanks for asking! I will check and let you know. | PASS |
-| 16 | Nice video bro | LLM | LLM | Thank you so much! Glad you liked it. | PASS |
-| 17 | Bahut achha video tha bhai | LLM | LLM | Bahut shukriya! Aise hi saath bane rahiye. | PASS |
-| 18 | बहुत बढ़िया वीडियो | LLM | LLM | बहुत शुक्रिया! ऐसे ही साथ बने रहिए। | PASS |
-| 19 | Great job, keep it up | LLM | LLM | Thank you so much! Glad you liked it. | PASS |
-| 20 | Mast video yaar | LLM | LLM | Bahut shukriya! Aise hi saath bane rahiye. | PASS |
-| 21 | 🔥 | EMOJI | EMOJI | You made my day 🔥 | PASS |
-| 22 | 👍🏽 | EMOJI | EMOJI | Thanks yaar 👍🏽 | PASS |
+| 01 | CCC course ki fees kitni hai? | INSTITUTE | INSTITUTE (draft) | Hamare CCC course fee ₹6,000 lagti hai. Poori detail yahan dekhein: https://zedking.in/ccc-computer-course | PASS |
+| 02 | डिजिटल मार्केटिंग कोर्स की फीस कितनी है? | INSTITUTE | INSTITUTE (draft) | यह कोर्स अभी हमारी लिस्ट में नहीं है। उपलब्ध कोर्स के लिए कॉल करें: +91-9416111612। | PASS |
+| 03 | What is the duration of the O Level course? | INSTITUTE | INSTITUTE (draft) | NIELIT O Level or NIELIT A Level - which one? Write the name, that's all. | PASS |
+| 04 | Address kya hai institute ka? | INSTITUTE | INSTITUTE (draft) | Call karo: +91-9416111612. Hamara address: Kaithal - Pundri - Karnal Rd, near New Bus Stand, opp. Hanuman Vatika, Friends Colony, Kaithal, Haryana 136027, India. Admission form yahan: https://zedking.in/admission | PASS |
+| 05 | Admission kaise le? 10th pass hoon. | INSTITUTE | INSTITUTE (draft) | Hamara number: +91-9416111612. Address yahan hai: Kaithal - Pundri - Karnal Rd, near New Bus Stand, opp. Hanuman Vatika, Friends Colony, Kaithal, Haryana 136027, India. Admission yahan: https://zedking.in/admission | PASS |
+| 06 | Digital marketing course ke baare me batao | INSTITUTE | INSTITUTE (draft) | Hamare Digital Marketing (DMA) wale course fee ₹15,000 hai aur ye 6 Months ka course hai. Full details yahan dekh sakte hain: https://zedking.in/digital-marketing-course | PASS |
+| 07 | Python course ki eligibility kya hai? | INSTITUTE | INSTITUTE (draft) | Kaun sa course jaanna hai? Course ka naam likh do. | PASS |
+| 08 | Bitcoin trading course karwana? | INSTITUTE | INSTITUTE (draft) | Ye course hamari list me nahi hai abhi. Course list ke liye call karein: +91-9416111612. | PASS |
+| 09 | Tally Prime course kitne mahine ka hai? | INSTITUTE | INSTITUTE (draft) | Hamare Tally Prime course - duration 3-6 Months rakhi hai. Poori detail yahan dekhein: https://zedking.in/tally-course | PASS |
+| 10 | फीस कितनी है? | INSTITUTE | INSTITUTE (draft) | किस कोर्स की बात हो रही है? नाम लिख दीजिए। | PASS |
+| 11 | Bhai ye vlog kis camera se shoot kiya? | SKIP | SKIP (needs_owner) |  | — |
+| 12 | Which camera did you use? | SKIP | SKIP (needs_owner) |  | — |
+| 13 | यह वीडियो कहां शूट हुआ है? | SKIP | SKIP (needs_owner) |  | — |
+| 14 | Is video me konsa mic use kiya? | SKIP | SKIP (needs_owner) |  | — |
+| 15 | What editing software do you use? | SKIP | SKIP (needs_owner) |  | — |
+| 16 | Nice video bro | PRAISE | PRAISE | Thanks a lot, keep it up! | PASS |
+| 17 | Bahut achha video tha bhai | PRAISE | PRAISE | Mast, thanks yaar 😄 | PASS |
+| 18 | बहुत बढ़िया वीडियो | PRAISE | PRAISE | बहुत बहुत धन्यवाद दोस्त 🙏 | PASS |
+| 19 | Great job, keep it up | PRAISE | PRAISE | You made my day! | PASS |
+| 20 | Mast video yaar | PRAISE | PRAISE | Shukriya bhai, appreciate it ❤️ | PASS |
+| 21 | 🔥 | EMOJI | EMOJI | Nice one, thanks 🔥 | PASS |
+| 22 | 👍🏽 | EMOJI | EMOJI | Appreciate it 👍🏽 | PASS |
 | 23 | 😡👎 | SKIP | SKIP (negative_emoji) |  | — |
 | 24 | 👻 | SKIP | SKIP (unknown_emoji) |  | — |
 | 25 | Subscribe to my channel http://spam.xyz | SKIP | SKIP (contains_url_or_domain) |  | — |
@@ -83,13 +83,17 @@
 | 35 | आपकी उम्र क्या है? | SKIP | SKIP (personal_question) |  | — |
 | 36 |     | SKIP | SKIP (empty) |  | — |
 | 37 | ... | SKIP | SKIP (empty) |  | — |
-| 38 | Bhai ye video bahut achha tha, maine poora dekha aur bahut kuch seekh… | LLM | LLM | Bahut shukriya! Aise hi saath bane rahiye. | PASS |
+| 38 | Bhai ye video bahut achha tha, maine poora dekha aur bahut kuch seekh… | PRAISE | PRAISE | Bahut shukriya bhai ❤️ | PASS |
 | 39 | Mera channel dekho https://youtube.com/@mine | SKIP | SKIP (contains_url_or_domain) |  | — |
 | 40 | Guide please | TRIGGER | TRIGGER | Here is the study guide: https://zedking.in/study - everything is in one place! | PASS |
+| 41 | Bot ho kya tum? | SKIP | SKIP (asks_if_bot) |  | — |
+| 42 | Kaunsa camera use karte ho? | SKIP | SKIP (needs_owner) |  | — |
+| 43 | Vlog kaise banate ho? | LLM | LLM | Video dekhne ke liye shukriya! Aise hi saath rahiye. | PASS |
 
 ### Failed cases
 
 Koi fail nahi — saare replies checks pass aur decisions expected.
+
 
 ### Notes
 
@@ -129,40 +133,40 @@ Koi fail nahi — saare replies checks pass aur decisions expected.
 
 | Scenario | Result | Detail |
 |---|---|---|
-| 5 clean cycles: no crash, no duplicate | PASS | 10 comments, 8 posts, 0 duplicate |
-| Error cycles: backoff + no duplicate | PASS | network fails 2, failed rows 4, 0 duplicate |
+| 5 clean cycles: no crash, no duplicate | PASS | 10 comments, 5 posts, 0 duplicate |
+| Error cycles: backoff + no duplicate | PASS | network fails 2, failed rows 3, 0 duplicate |
 <!-- STEP4:END -->
 
 <!-- STEP5:START -->
 ## Step 5 — Real LLM quality test
 
-- Date: 2026-11-15 01:44
+- Date: 2026-11-15 16:05
 - Providers: Groq, Gemini | Model: `openai/gpt-oss-120b` / `gemini-3.6-flash`
 - Cases: 12 | Reply bana: 12 | Hard fail: 0 | Expectation miss: 0
-- Kis model ne jawab diya: Groq x12
+- Kis model ne jawab diya: Groq x9
 - Har case me 8 sec gap; 429 par ek hi retry (60 sec baad). YouTube API call nahi hui — sirf LLM.
 - Known cosmetic: contact-reply me LLM ka closing word (jaise 'Dhanyavaad') kabhi-kabhi contact block se pehle aa jaata hai — facts aur links sahi hain.
 
 | ID | Type | Comment | Reply | Model | Auto checks | Expect |
 |---|---|---|---|---|---|---|
-| llm-01 | video | Bhai ye vlog kis camera se shoot kiya? | Dekhta hoon, baad mein batata hoon! | Groq | PASS | OK |
-| llm-02 | video | Which camera did you use? | I'll check and let you know! | Groq | PASS | OK |
-| llm-03 | video | यह वीडियो किस कैमरे से शूट हुआ है? | कैमरा कौन सा इस्तेमाल हुआ, मैं देख कर बताता हूँ। | Groq | PASS | OK |
-| llm-04 | video | Is video me konsa mic use kiya? | Mic ka detail video me mention nahi hua, dekh ke batata hoon! | Groq | PASS | OK |
-| llm-05 | video | What editing software do you use? | I'll check and let you know soon! | Groq | PASS | OK |
-| llm-06 | video | Nice video bro | Thanks a lot! Glad you enjoyed the studio tour. | Groq | PASS | OK |
-| llm-07 | video | Bahut achha video tha bhai | Thanks yaar! Khush kar diya dekh ke, aise hi support dete rehna. | Groq | PASS | OK |
-| llm-08 | video | बहुत बढ़िया वीडियो | बहुत धन्यवाद! आपका समर्थन हमारे लिए प्रेरणा है। 🙏 | Groq | PASS | OK |
-| llm-09 | institute | CCC course ki fees kitni hai? | ZedKing ke CCC (NIELIT) course ki fee ₹6,000 hai, 3 mahine ka offline program.  / Shubhkamnayein. / Full details yahan dekh sakte hain: https://zedking.in/ccc-computer-course | Groq | PASS | OK |
-| llm-10 | institute | Digital marketing course ki duration kitni hai? | Digital Marketing Course ka duration 6 months hai.  / ZedKing team. / Full details yahan dekh sakte hain: https://zedking.in/digital-marketing-course | Groq | PASS | OK |
-| llm-11 | institute | Digital marketing course ki eligibility kya hai? | Digital Marketing course ke liye aapko 10th pass ya usse upar hona zaroori hai.  / ZedKing team / Full details yahan dekh sakte hain: https://zedking.in/digital-marketing-course | Groq | PASS | OK |
-| llm-12 | institute | Institute ka address kya hai? | Yahi se aap visit kar sakte hain. Dhanyavaad Call karein: +91-9416111612. Address: Kaithal - Pundri - Karnal Rd, near New Bus Stand, opp. Hanuman Vatika, Friends Colony, Kaithal, Haryana 136027, India. Admission: https:… | Groq | PASS | OK |
+| llm-01 | video | Bhai ye vlog kis camera se shoot kiya? | Is vlog mein camera ka koi detail nahi diya gaya. | Groq | PASS | OK |
+| llm-02 | video | Which camera did you use? | Sorry, the video didn't mention which camera was used. | Groq | PASS | OK |
+| llm-03 | video | यह वीडियो किस कैमरे से शूट हुआ है? | वीडियो में कैमरे का जिक्र नहीं है। | Groq | PASS | OK |
+| llm-04 | video | Is video me konsa mic use kiya? | Video me mic ka koi zikr nahi hai. | Groq | PASS | OK |
+| llm-05 | video | What editing software do you use? | The video didn't mention the editing software. | Groq | PASS | OK |
+| llm-06 | video | Vlog kaise banate ho? | Is video mein vlog banane ka process nahi dikhaya. | Groq | PASS | OK |
+| llm-07 | video | Bahut achha video tha bhai | Thanks yaar, aise hi support karte rehna 🙏 | Groq | PASS | OK |
+| llm-08 | video | बहुत बढ़िया वीडियो | बहुत धन्यवाद यार, ऐसे ही साथ देते रहना 🙏 | Groq | PASS | OK |
+| llm-09 | institute | CCC course ki fees kitni hai? | Hamare CCC course - fee ₹6,000 lagti hai. Full details yahan dekh sakte hain: https://zedking.in/ccc-computer-course | - | PASS | OK |
+| llm-10 | institute | Digital marketing course ki duration kitni hai? | Hamare Digital Marketing (DMA) course fee ₹15,000 hai aur duration 6 Months rakhi hai. Poori detail yahan dekhein: https://zedking.in/digital-marketing-course | - | PASS | OK |
+| llm-11 | institute | Digital marketing course ki eligibility kya hai? | Hamare Digital Marketing (DMA) wale course eligibility 10th pass or above honi chahiye. Poori detail yahan dekhein: https://zedking.in/digital-marketing-course | - | PASS | OK |
+| llm-12 | institute | Institute ka address kya hai? | Hamara number: +91-9416111612. Hamara address: Kaithal - Pundri - Karnal Rd, near New Bus Stand, opp. Hanuman Vatika, Friends Colony, Kaithal, Haryana 136027, India. Admission form yahan: https://zedking.in/admission | Groq | PASS | OK |
 <!-- STEP5:END -->
 
 <!-- STEP6:START -->
 ## Step 6 — Review stats (`review.py --stats` / `--today`)
 
-- Result: **11/11 PASS** (temp db, koi network call nahi)
+- Result: **15/15 PASS** (temp db, koi network call nahi)
 - `--stats`: total + status counts + reason counts + aaj ka hisaab
 - `--today`: sirf aaj (local date) ki rows; `--drafts --today` dono filter
 
@@ -189,6 +193,30 @@ Reason:
 | --drafts me poora long comment | PASS | - |
 | --drafts --today rows = 3 | PASS | - |
 | normal table rows = 8 | PASS | - |
+| --owner me needs_owner row | PASS | --- asks_if_bot | 2026-11-15 10:33:48
+VIDEO  : (video title nahi hai)
+COMMENT: Bot ho kya?
+LINK   : https://www.youtube.com/watch?v=vid2&lc=o2
+
+--- ne |
+| --owner me asks_if_bot row | PASS | --- asks_if_bot | 2026-11-15 10:33:48
+VIDEO  : (video title nahi hai)
+COMMENT: Bot ho kya?
+LINK   : https://www.youtube.com/watch?v=vid2&lc=o2
+
+--- ne |
+| --owner me video title | PASS | --- asks_if_bot | 2026-11-15 10:33:48
+VIDEO  : (video title nahi hai)
+COMMENT: Bot ho kya?
+LINK   : https://www.youtube.com/watch?v=vid2&lc=o2
+
+--- ne |
+| --owner me direct link | PASS | --- asks_if_bot | 2026-11-15 10:33:48
+VIDEO  : (video title nahi hai)
+COMMENT: Bot ho kya?
+LINK   : https://www.youtube.com/watch?v=vid2&lc=o2
+
+--- ne |
 <!-- STEP6:END -->
 
 <!-- STEP7:START -->
