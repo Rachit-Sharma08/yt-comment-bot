@@ -26,32 +26,40 @@ kuch nahi jaata jab tak tum `MODE=auto` + `--live` jaan-bujhkar na karo.
                                 │ bache hue comments
                                 ▼
         ┌───────────────────────────────────────────────┐
-        │ triggers.match_trigger  (keyword canned reply) │──▶ reply ready
-        └───────────────────────┬───────────────────────┘
-                                │ trigger nahi mila
-                                ▼
-        ┌───────────────────────────────────────────────┐
-        │ intent.classify_comment  → institute_info?     │
+        │ intent.classify_comment                        │
+        │ spam · criticism · asks_if_bot · praise ·     │──▶ "bot ho kya / AI hai?"
+        │ personal_question · institute_info · video_q   │    → SKIP (owner khud de)
         └───────────────┬───────────────────┬───────────┘
-                        │ yes               │ no (video comment)
-                        ▼                   ▼
-   ┌────────────────────────────┐   ┌──────────────────────────────┐
-   │ knowledge.search(chunks)   │   │ video title + description    │
-   │ + ai.answer_institute()    │   │ + notes → ai.make_reply()    │
-   │ (Groq → Gemini fallback)   │   │ (Groq → Gemini fallback)     │
-   └──────────────┬─────────────┘   └──────────────┬───────────────┘
-                  └───────────────┬──────────────────┘
-                                  ▼
+                        │                   │
+        praise ─────────┘                   │ video ka factual sawaal
+            │                              │ (camera/mic/editing/location)
+            ▼                              ▼
+   ┌──────────────────────┐   ┌────────────────────────────────────┐
+   │ templates.praise()   │   │ video_notes/<id>.md → owner_facts.md │
+   │ (voice_samples ka    │   │ fact mila → 1-line casual reply      │
+   │  andaaz, LLM nahi)   │   │ fact nahi → SKIP (needs_owner)       │
+   └──────────────────────┘   └────────────────────────────────────┘
+                        │
+                        │ institute_info
+                        ▼
+   ┌──────────────────────────────────────────────────────────┐
+   │ knowledge.course_records() (41 courses, structured)      │
+   │ + field detect (fee/duration/eligibility/mode/cert)      │
+   │ → TEMPLATE reply ("Hamare CCC course fee ... hai")       │
+   │ → ambiguous → clarification · list me nahi → phone reply  │
+   │ LLM sirf CLASSIFY karta hai (rule fail ho tabhi, temp 0) │
+   └───────────────────────┬──────────────────────────────────┘
+                           ▼
                   ┌───────────────────────────────────┐
-                  │ Validators (ai.py)                │
-                  │ URL / phone / secret / first-person│
-                  │ / internal-word + knowledge facts  │
+                  │ Validators (ai.py + reply_checks)  │
+                  │ URL/phone/secret/first-person/     │
+                  │ internal-word/promise/AI-phrase/    │
+                  │ em-dash/third-person + grounding    │
                   └───────────────┬───────────────────┘
                                   ▼
                   ┌───────────────────────────────────┐
-                  │ MODE=draft → sirf bot.db me save   │──▶ review.py --drafts
+                  │ MODE=draft → sirf bot.db me save   │──▶ review.py --drafts / --owner
                   │ MODE=auto  → YouTube par post      │    (live: 20-60s gap)
-                  │   (--live + CHANNEL_PROFILE rules) │
                   └───────────────────────────────────┘
 ```
 
@@ -60,9 +68,19 @@ kuch nahi jaata jab tak tum `MODE=auto` + `--live` jaan-bujhkar na karo.
 ## Features
 
 - **Official API only** — koi scraping ya browser automation nahi, sirf YouTube Data API v3 (OAuth).
-- **4 reply sources** — emoji template, keyword trigger, institute knowledge (chunk-grounded), normal LLM.
+- **4 reply sources** — emoji template, keyword trigger, praise template (voice samples), normal LLM.
+- **Institute replies = sirf templates** — 41 courses ka structured record (`knowledge.course_records()`),
+  fee/duration/eligibility/mode/certificate values file se **hubahu**; "hum/hamare" awaaz me.
+  LLM sirf **classify** karta hai (rule fail ho tabhi, temperature 0, JSON output).
+- **Koi jhootha vaada nahi** — "dekh ke bata hoon" / "I'll check and let you know" jaisa promise
+  validator reply discard kar deta hai.
+- **Owner facts** — camera/mic/editing/location/music/upload-time ka jawab sirf
+  `video_notes/<id>.md` ya `knowledge/owner_facts.md` se. Na mile to reply nahi
+  (`needs_owner`) — owner khud jawab de.
+- **"Bot ho kya / AI hai?" par reply nahi** — `asks_if_bot` skip (owner khud bolega).
 - **3 languages** — Roman Hinglish, English, Devanagari Hindi. Reply **comment ki hi language + script** me hoti hai.
 - **Hallucination ke khilaf validators** — reply me koi fee/phone/address/link sirf tab jata hai jab wo knowledge file me **hubahu** likha ho.
+- **AI-jaise phrases + em dash + third-person "ZedKing ke ..."** reply me nahi (discard).
 - **Link whitelist** — sirf `zedking.in` ke links, aur sirf daily cap tak.
 - **Prompt-injection safe** — comment "untrusted data" maana jaata hai; instruction-wali comments skip.
 - **Skip rules** — abuse, spam-link, criticism, personal question, negative emoji, empty comment.
@@ -98,18 +116,23 @@ yt-bot/
 ├── resume_bot.bat       # kill switch OFF (STOP file delete)
 ├── knowledge/
 │   ├── zedking_info.md  # 41+ courses ka verified data (fee/duration/eligibility/URL)
+│   ├── owner_facts.md   # owner ki apni jaankari (camera/mic/editing...) — khali = reply nahi
+│   ├── voice_samples.md # casual reply ke style examples (few-shot)
 │   └── CHECKLIST.md     # knowledge file kaise update karein
-├── test_e2e.py          # 40 comments, full pipeline (sirf mock)
+├── test_e2e.py          # 43 comments, full pipeline (sirf mock)
 ├── test_failures.py     # 11 failure scenarios (quota/token/lock/STOP...)
 ├── test_loop.py         # loop stability (repeat, backoff, duplicate)
+├── test_institute_v2.py # 16 institute/facts comments + 50 checks (real knowledge file)
 ├── test_real_llm.py     # 12 real LLM calls — reply quality
-├── test_review.py       # review --stats / --today
+├── test_review.py       # review --stats / --today / --owner
 ├── test_runner.py       # run_bot.bat exit-code logic
 ├── test_institute.py    # institute reply path (pipeline ke saath)
 ├── test_ai.py, test_all.py, test_space.py
+├── REPORT_2.md          # Step 5 (institute v2) ka report
 ├── OVERNIGHT_REPORT.md  # test results ka report
+├── PRESENTATION_NOTES.md # demo/presentation script
 ├── WINDOWS_RUN.md       # Windows chalaane + autostart ke steps
-└── AGENTS.md            # project ke rules (policy, coding style)
+└── AGENTS.md            # project ke rules (policy, coding style, awaaz + facts)
 ```
 
 ---
@@ -161,6 +184,16 @@ Browser khulega → "Allow" karo → `token.json` ban jayega (agle baar browser 
 
 `client_secret.json`, `token.json`, `.env` aur `bot.db` `.gitignore` me hain — kabhi commit nahi hone chahiye.
 
+### 4) Apni jaankari bharo (owner facts)
+
+`knowledge/owner_facts.md` kholo aur apni asli jaankari bharo — camera, mic, editing
+software, shehar, music, upload time. **Jawab khali chhodne ka matlab** bot us sawaal
+par reply nahi karega (`needs_owner`) — wo comments `review.py --owner` me dikhte hain,
+tum khud jawab de sakte ho.
+
+`knowledge/voice_samples.md` me reply ka casual andaaz already likha hai (wahi style
+LLM ko diya jaata hai) — usse apni pasand ke hisaab se badal sakte ho.
+
 ---
 
 ## Modes
@@ -203,15 +236,17 @@ Browser khulega → "Allow" karo → `token.json` ban jayega (agle baar browser 
 ## Tests (sab mock, koi real YouTube call nahi)
 
 ```powershell
-venv\Scripts\python.exe test_e2e.py        # 40 comments, full pipeline
-venv\Scripts\python.exe test_failures.py   # 11 failure scenarios
-venv\Scripts\python.exe test_loop.py       # loop stability
-venv\Scripts\python.exe test_real_llm.py   # 12 real LLM calls (quality check)
-venv\Scripts\python.exe test_review.py     # review --stats / --today
-venv\Scripts\python.exe test_runner.py     # run_bot.bat exit codes
+venv\Scripts\python.exe test_e2e.py          # 43 comments, full pipeline
+venv\Scripts\python.exe test_failures.py     # 11 failure scenarios
+venv\Scripts\python.exe test_loop.py         # loop stability
+venv\Scripts\python.exe test_institute_v2.py # 16 comments + 50 checks (real knowledge file)
+venv\Scripts\python.exe test_review.py       # review --stats / --today / --owner
+venv\Scripts\python.exe test_runner.py       # run_bot.bat exit codes
+venv\Scripts\python.exe test_real_llm.py     # 12 real LLM calls (quality check)
 ```
 
-Har test apna result `OVERNIGHT_REPORT.md` me apne section me likhta hai.
+Har test apna result `OVERNIGHT_REPORT.md` me apne section me likhta hai
+(`REPORT_2.md` institute v2 ka report hai).
 
 ---
 
@@ -221,6 +256,7 @@ Har test apna result `OVERNIGHT_REPORT.md` me apne section me likhta hai.
 venv\Scripts\python.exe review.py --drafts   # draft replies poora text
 venv\Scripts\python.exe review.py --today    # aaj ki rows
 venv\Scripts\python.exe review.py --stats    # total + status/reason counts
+venv\Scripts\python.exe review.py --owner    # needs_owner + asks_if_bot (owner jawab de)
 ```
 
 Windows par chalane aur autostart (Task Scheduler/Startup folder) ke steps:

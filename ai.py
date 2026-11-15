@@ -261,20 +261,30 @@ def make_reply(video_title, video_context, comment, provider=None, temperature=N
 
 # ================= Owner facts (camera/mic/editing/location...) =================
 
-# Video ka FACTUAL sawaal — kaunsa owner field poochha gaya
+# Video ka FACTUAL sawaal — kaunsa owner field poochha gaya.
+# Terms PHRASE me hain ("kaunsa camera", "which mic") — taaki pichhle me aaya
+# hua word (jaise "camera setup, sab perfect tha") sawaal na samjha jaye.
 _OWNER_QUESTION_TERMS = {
-    "camera": ["camera", "dslr", "कैमरा", "कैमरे"],
-    "gimbal": ["gimbal", "tripod"],
-    "mic": ["mic", "microphone", "माइक"],
-    "editing": ["editing software", "editing app", "kya app", "kya software",
-                "capcut", "premiere", "final cut", "एडिटिंग", "सॉफ्टवेयर"],
-    "music": ["bgm", "background music", "music", "song", "track",
-              "म्यूजिक", "संगीत", "गाना"],
-    "location": ["kahan shoot", "kahan se ho", "kaunsa shehar", "kaunsa city",
-                 "kahan tak", "कहाँ शूट", "कहां शूट", "कहाँ", "कहां", "कहाँ से हो"],
+    "camera": ["kaunsa camera", "konsa camera", "kis camera", "which camera",
+               "camera konsa", "camera kaunsa", "camera kya", "camera batao",
+               "कौन सा कैमरा", "कौनसा कैमरा", "किस कैमरे", "कैमरा कौन", "कैमरा क्या"],
+    "gimbal": ["kaunsa gimbal", "which gimbal", "gimbal kaunsa", "gimbal kya",
+               "tripod kaunsa", "kaunsa tripod"],
+    "mic": ["kaunsa mic", "konsa mic", "kis mic", "which mic", "mic konsa",
+            "mic kaunsa", "mic kya", "microphone kaunsa",
+            "कौन सा माइक", "किस माइक", "माइक कौन"],
+    "editing": ["editing software", "editing app", "editing karte", "editing karte ho",
+                "kya app", "kya software", "which software", "what software",
+                "capcut", "premiere", "final cut", "एडिटिंग", "कौन सा सॉफ्टवेयर"],
+    "music": ["bgm", "background music", "music kahan", "music konsa", "music kaunsa",
+              "song kaunsa", "song konsa", "which music", "what music",
+              "म्यूजिक", "संगीत", "कौन सा गाना"],
+    "location": ["kahan shoot", "kahan se ho", "kahan se aaya", "kahan tak",
+                 "kaunsa shehar", "kaunsa city", "kahan rehte", "kahan",
+                 "कहाँ शूट", "कहां शूट", "कहाँ से", "कहां से", "कहाँ", "कहां"],
     "vlog_type": ["kaisa vlog", "kis type ka vlog", "kya type ka vlog"],
     "upload_time": ["kab upload", "kab tak", "upload time", "schedule",
-                    "kab aayega", "kab aayegi"],
+                    "kab aayega", "kab aayegi", "kab tak aayega"],
 }
 
 
@@ -705,6 +715,9 @@ def answer_institute(comment, chunks=None):
     if record is None and len(candidates) >= 2:
         # Ambiguous — dono course ka naam poochho
         return templates.clarify(language, [c["short_name"] for c in candidates[:2]])
+    if record is None and len(candidates) == 1:
+        # Ek weak candidate — course ka naam clear nahi, poochho
+        return templates.no_course(language)
     if record is None and not candidates:
         # Rule se kuch nahi mila — LLM sirf yahan classify karne me lagta hai
         record = _llm_classify_course(comment, records)

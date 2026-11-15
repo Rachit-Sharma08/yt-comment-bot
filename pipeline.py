@@ -54,11 +54,9 @@ def handle_comment(text, video_ctx=None, institute_enabled=True, notes_fn=None):
             return label, None, chunks, "institute_fail"
         return label, reply, chunks, ""
 
-    if label == "praise":
-        # Tareef ka chhota thanks — template se (LLM nahi), repeat nahi hoga
-        return label, templates.praise(ai._detect_language(text)), [], ""
-
     # --- Video ka FACTUAL sawaal (camera/mic/editing/location/music/upload time) ---
+    # Ye praise se PEHLE check hota hai — "video bahut achha, kaunsa camera tha?"
+    # jaise mixed comment me bhi sawaal poochha gaya hai (owner ko dikhna chahiye).
     field = ai.owner_question_field(text)
     if field:
         # 1) pehle video_notes/<video_id>.md, 2) phir knowledge/owner_facts.md
@@ -77,6 +75,10 @@ def handle_comment(text, video_ctx=None, institute_enabled=True, notes_fn=None):
         if reply is None:
             return label, None, [], "llm_fail"
         return label, reply, [], ""
+
+    if label == "praise":
+        # Tareef ka chhota thanks — template se (LLM nahi), repeat nahi hoga
+        return label, templates.praise(ai._detect_language(text)), [], ""
 
     # Normal (video) LLM path — video context tabhi chahiye jab yahan aaye
     title, context = video_ctx() if video_ctx else ("", "")

@@ -253,7 +253,7 @@ INSTITUTE_TEMPLATES = {
         "Roman Hinglish": [
             "Kaun sa course chahiye - {A} ya {B}? Course ka naam likh do.",
             "Aap {A} ki baat kar rahe ho ya {B} ki? Naam likh do, uski detail yahi hai.",
-            "{A} ya {B} - kaun sa course? Ek naam likh do bas.",
+            "{A} ya {B} - kaun sa course chahiye? Ek naam likh do bas.",
         ],
         "English": [
             "Which course do you mean - {A} or {B}? Just write the course name.",
@@ -396,9 +396,9 @@ MAX_LINK_REPLIES_PER_DAY = 15
 # Har part alag — jo allowed hai (cap ke hisaab se) wahi lagao
 CONTACT_REPLY_PARTS = {
     "Roman Hinglish": {
-        "phone": ["Call karein: {phone}.", "Phone: {phone}.", "Hamara number: {phone}."],
-        "address": ["Address: {address}.", "Pata: {address}.", "Hamara address: {address}."],
-        "link": ["Admission: {url}", "Admission form yahan: {url}", "Dakhila yahan: {url}"],
+        "phone": ["Call karein: {phone}.", "Hamara number: {phone}.", "Call karo: {phone}."],
+        "address": ["Pata: {address}.", "Hamara address: {address}.", "Address yahan hai: {address}."],
+        "link": ["Admission yahan: {url}", "Admission form yahan: {url}", "Dakhila yahan: {url}"],
     },
     "English": {
         "phone": ["Call us: {phone}.", "Phone: {phone}.", "Our number: {phone}."],

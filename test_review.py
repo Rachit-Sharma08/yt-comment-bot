@@ -62,6 +62,14 @@ def _seed():
     db._db().commit()
 
 
+def _seed_owner():
+    """needs_owner + asks_if_bot rows + video title (--owner ke liye)"""
+    _fresh_db("ytbot_review_owner.db")
+    db.save_video("vid1", "Test Video Title", "desc")
+    db.save_reply("o1", "vid1", "Kaunsa camera tha?", "", "skipped", "needs_owner")
+    db.save_reply("o2", "vid2", "Bot ho kya?", "", "skipped", "asks_if_bot")
+
+
 def main():
     checks = []
 
@@ -106,6 +114,17 @@ def main():
     # --- 6) normal table ---
     out = _run()
     check("normal table rows = 8", out.rstrip().endswith("8 rows"))
+
+    # --- 7) --owner: needs_owner + asks_if_bot rows (comment + video + link) ---
+    _seed_owner()
+    out = _run("--owner")
+    check("--owner me needs_owner row", "needs_owner" in out and "Kaunsa camera tha?" in out,
+          out[:150])
+    check("--owner me asks_if_bot row", "asks_if_bot" in out and "Bot ho kya?" in out,
+          out[:150])
+    check("--owner me video title", "Test Video Title" in out, out[:150])
+    check("--owner me direct link",
+          "https://www.youtube.com/watch?v=vid1&lc=o1" in out, out[:150])
 
     passed = sum(1 for _, ok, _ in checks if ok)
     print(f"\nReview: {passed}/{len(checks)} PASS")
