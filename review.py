@@ -43,10 +43,29 @@ def _print_stats():
         print(f"  {name:10} {n}")
 
 
+def _print_owner():
+    """needs_owner / asks_if_bot rows — owner khud jawab de (comment + video + link)."""
+    rows = db.owner_rows()
+    if not rows:
+        print("Koi 'needs_owner' ya 'asks_if_bot' row nahi mila.")
+        return
+    for comment_id, video_id, reason, comment, created_at, title in rows:
+        link = f"https://www.youtube.com/watch?v={video_id}&lc={comment_id}"
+        print(f"--- {reason} | {created_at}")
+        print(f"VIDEO  : {title or '(video title nahi hai)'}")
+        print(f"COMMENT: {comment or ''}")
+        print(f"LINK   : {link}")
+        print()
+    print(f"{len(rows)} rows (owner ko khud jawab dena hai)")
+
+
 def main():
     args = sys.argv[1:]
     if "--stats" in args:  # stats apne aap me poora output hai
         _print_stats()
+        return
+    if "--owner" in args:  # owner ke jawab wale comments
+        _print_owner()
         return
 
     drafts_only = "--drafts" in args  # sirf draft rows dikhani hain

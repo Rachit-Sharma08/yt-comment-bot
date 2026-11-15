@@ -11,6 +11,7 @@ import ai  # institute + normal LLM reply
 import config  # mode/caps
 import intent  # comment ka label
 import knowledge  # knowledge chunks (institute answers ke liye)
+import templates  # fixed templates (praise/thanks)
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 SKIP_LABELS = ("criticism", "spam", "personal_question")
 
 
-def handle_comment(text, video_ctx=None, institute_enabled=True):
+def handle_comment(text, video_ctx=None, institute_enabled=True, notes_fn=None):
     """Ek comment ka reply — sabse upar se niche tak (labels + reply).
 
     Args:
@@ -26,6 +27,7 @@ def handle_comment(text, video_ctx=None, institute_enabled=True):
         video_ctx: callable -> (title, context) — sirf normal (non-institute)
             LLM path me call hota hai (video info tabhi fetch ho, jab zarurat ho)
         institute_enabled: False = institute replies chhod do (mode off)
+        notes_fn: callable -> video_notes/<id>.md ka text (owner-fact lookup)
 
     Returns:
         (label, reply, chunks, reason)
@@ -39,6 +41,10 @@ def handle_comment(text, video_ctx=None, institute_enabled=True):
     if label in SKIP_LABELS:
         return label, None, [], label
 
+    if label == "asks_if_bot":
+        # "bot ho kya / AI hai?" — bot kuch nahi bolega, owner khud jawab dega
+        return label, None, [], "asks_if_bot"
+
     if label == "institute_info":
         if not institute_enabled:
             return label, None, [], "institute_mode_off"
@@ -47,6 +53,30 @@ def handle_comment(text, video_ctx=None, institute_enabled=True):
         if reply is None:
             return label, None, chunks, "institute_fail"
         return label, reply, chunks, ""
+
+    if label == "praise":
+        # Tareef ka chhota thanks — template se (LLM nahi), repeat nahi hoga
+        return label, templates.praise(ai._detect_language(text)), [], ""
+
+    # --- Video ka FACTUAL sawaal (camera/mic/editing/location/music/upload time) ---
+    field = ai.owner_question_field(text)
+    if field:
+        # 1) pehle video_notes/<video_id>.md, 2) phir knowledge/owner_facts.md
+        notes = ""
+        if notes_fn:
+            try:
+                notes = notes_fn() or ""
+            except Exception as e:  # notes padhne me dikkat — fact nahi milega
+                logger.warning("video notes padhe nahi ja sake: %s", e)
+                notes = ""
+        fact = knowledge.facts_from_notes(notes).get(field) or knowledge.owner_facts().get(field)
+        if not fact:
+            # Jaankari owner ke paas nahi hai — reply NAHI (needs_owner)
+            return label, None, [], "needs_owner"
+        reply = ai.answer_fact(fact, text)
+        if reply is None:
+            return label, None, [], "llm_fail"
+        return label, reply, [], ""
 
     # Normal (video) LLM path — video context tabhi chahiye jab yahan aaye
     title, context = video_ctx() if video_ctx else ("", "")

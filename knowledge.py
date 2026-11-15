@@ -233,6 +233,147 @@ def _query_terms(query):
     return set(w.lower() for w in re.findall(r"[A-Za-z0-9+#]{2,}|[\u0900-\u097F]{2,}", query))
 
 
+# ================= Owner facts (knowledge/owner_facts.md) =================
+# File ka format: "Sawaal: Jawab" (ek line me ek cheez).
+# Jawab khali ya UNKNOWN = bot us baare me jawab NAHI dega (needs_owner skip).
+OWNER_FACT_FIELDS = {
+    "camera": ["camera", "phone"],
+    "gimbal": ["gimbal", "tripod"],
+    "mic": ["mic"],
+    "editing": ["editing", "software"],
+    "music": ["music", "background", "track"],
+    "location": ["kahan ke ho", "shehar", "city", "location"],
+    "vlog_type": ["vlog banate", "type ke vlog"],
+    "upload_time": ["upload kab", "upload hota"],
+}
+
+_OWNER_FACTS = None
+
+
+def owner_facts():
+    """Owner ki apni jaankari — {field: value ya None}.
+
+    value None = file me us field ka jawab khali/UNKNOWN hai (bot jawab nahi dega).
+    """
+    global _OWNER_FACTS
+    if _OWNER_FACTS is not None:
+        return _OWNER_FACTS
+
+    facts = {field: None for field in OWNER_FACT_FIELDS}
+    try:
+        with open(config.OWNER_FACTS_FILE, encoding="utf-8") as f:
+            lines = f.readlines()
+    except OSError:
+        logger.warning("Owner facts file nahi mili: %s", config.OWNER_FACTS_FILE)
+        _OWNER_FACTS = facts
+        return facts
+
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("#") or ":" not in line:
+            continue
+        key, _, val = line.partition(":")
+        val = val.strip()
+        if not val or "UNKNOWN" in val.upper():
+            continue  # khali/UNKNOWN = fact pata nahi
+        low = key.lower()
+        for field, words in OWNER_FACT_FIELDS.items():
+            if any(w in low for w in words):
+                facts[field] = val
+                break
+    _OWNER_FACTS = facts
+    return facts
+
+
+def facts_from_notes(text):
+    """video_notes/<id>.md se 'Field: value' pairs — owner field keys me.
+
+    (owner_facts.md jaisa hi format: "Camera: iPhone 15 Pro")
+    """
+    out = {}
+    for line in (text or "").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or ":" not in line:
+            continue
+        key, _, val = line.partition(":")
+        val = val.strip()
+        if not val or "UNKNOWN" in val.upper():
+            continue
+        low = key.lower()
+        for field, words in OWNER_FACT_FIELDS.items():
+            if any(w in low for w in words):
+                out.setdefault(field, val)
+                break
+    return out
+
+
+# ================= Course records (structured) =================
+_COURSE_RECORDS = None
+
+
+def _clean_field(val):
+    """UNKNOWN ya khaali value = None (bot guess nahi karega)."""
+    if not val:
+        return None
+    val = val.strip()
+    if not val or "UNKNOWN" in val.upper():
+        return None
+    return val
+
+
+def course_records():
+    """Har course ka structured record: fee/duration/eligibility/mode/certificate/url.
+
+    Missing ya UNKNOWN field = None. (LLM nahi — sab file se hubahu)
+    """
+    global _COURSE_RECORDS
+    if _COURSE_RECORDS is not None:
+        return _COURSE_RECORDS
+
+    recs = []
+    for c in load_chunks():
+        h = c["heading"]
+        m = re.match(r"^(\d+)\.\s*(.+)$", h)
+        if not m:
+            continue  # course nahi (branch/section)
+        body = c["text"]
+        # Course me "Fee:" ya "Duration:" line hoti hai — section/branch me nahi
+        if not re.search(r"^- (Fee|Duration):", body, re.M):
+            continue
+        rec = {
+            "course_id": m.group(1),
+            "name": m.group(2).strip(),
+            "short_name": c["short"],
+            "fee": None, "duration": None, "eligibility": None,
+            "mode": None, "certificate": None, "url": None,
+        }
+        cert_mode = None
+        for field, label in (("duration", "Duration"), ("fee", "Fee"),
+                             ("eligibility", "Eligibility"), ("certificate", "Certificate/Mode")):
+            mm = re.search(r"^- " + re.escape(label) + r":\s*(.+)$", body, re.M)
+            if not mm:
+                continue
+            val = _clean_field(mm.group(1))
+            if field == "certificate":
+                cert_mode = val
+            else:
+                rec[field] = val
+        # Certificate/Mode line se mode (Offline/Online) aur certificate alag
+        if cert_mode:
+            mm = re.search(r"(Offline[^/,\n]*|Online[^/,\n]*)", cert_mode)
+            if mm:
+                rec["mode"] = mm.group(1).strip()
+            rec["certificate"] = re.split(r"[/,]", cert_mode)[0].strip() or None
+        mu = re.search(r"^- URL:\s*(\S+)", body, re.M)
+        if mu:
+            rec["url"] = mu.group(1).strip()
+        recs.append(rec)
+
+    _COURSE_RECORDS = recs
+    logger.info("Course records bane: %d", len(recs))
+    return recs
+
+
 def search(query, top_k=3):
     """Query ke liye top_k chunks return karo (best pehle). Kuch na mile to []."""
     chunks = load_chunks()

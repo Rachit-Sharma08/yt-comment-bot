@@ -5,6 +5,7 @@ import re
 from urllib.parse import urlparse
 
 import ai
+import config
 import filters
 
 # --- Markdown markers (YouTube comment plain text hota hai) ---
@@ -55,6 +56,18 @@ _FIRST_PERSON_RE = re.compile(
 
 _URL_RE = re.compile(r"(?i)https?://[^\s<>\"')]+|www\.[^\s<>\"')]+")
 _DEV_RE = re.compile(r"[\u0900-\u097F]")
+
+# AI-jaise phrases + wade (promise) — config ki list se
+_AI_LIKE_RE = re.compile(
+    "|".join(re.escape(p) for p in config.AI_LIKE_PHRASES), re.IGNORECASE)
+_PROMISE_RE = re.compile(
+    "|".join(re.escape(p) for p in config.PROMISE_PHRASES), re.IGNORECASE)
+
+# Em dash (—) aur en dash (–) — chhote casual reply me nahi chahiye
+_DASH_RE = re.compile(r"[—–]")
+
+# Third person institute ("ZedKing ke ... course") — "hum/hamare" chahiye
+_THIRD_PERSON_RE = re.compile(r"(?i)\bzedking\s+(?:ke|ka|ki|me|ko|aur|and)\b")
 
 
 def _word_at(text, start, end):
@@ -142,6 +155,24 @@ def check_reply(comment, reply, expected_lang=None):
     if len(reply) >= 280:
         fails.append("too_long")
         details["too_long"] = len(reply)
+
+    ai_like = _AI_LIKE_RE.findall(reply)
+    if ai_like:
+        fails.append("ai_phrase")
+        details["ai_phrase"] = sorted(set(ai_like))
+
+    promise = _PROMISE_RE.findall(reply)
+    if promise:
+        fails.append("promise")
+        details["promise"] = sorted(set(promise))
+
+    if _DASH_RE.search(reply):
+        fails.append("em_dash")
+        details["em_dash"] = _DASH_RE.findall(reply)
+
+    if _THIRD_PERSON_RE.search(reply):
+        fails.append("third_person")
+        details["third_person"] = _THIRD_PERSON_RE.findall(reply)
 
     lang_ok, lang_why = check_language(comment, reply, expected_lang)
     if not lang_ok:

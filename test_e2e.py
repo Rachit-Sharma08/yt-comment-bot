@@ -20,8 +20,9 @@ import mock_youtube
 import reply_checks
 import report_utils
 
-# --- 40 comments: institute 10, video 5, praise 5, emoji 4, spam 3, abuse 2,
-#     criticism 2, injection 2, personal 2, empty 2, long 1, URL 1, trigger 1 ---
+# --- 42 comments: institute 10, video 5 (ab needs_owner skip), praise 5 (template),
+#     emoji 4, spam 3, abuse 2, criticism 2, injection 2, personal 2, empty 2,
+#     long 1, URL 1, trigger 1, bot-ka-sawaal 1, camera-factual 1 ---
 LONG_COMMENT = (
     "Bhai ye video bahut achha tha, maine poora dekha aur bahut kuch seekha. "
     "Aap kaise itna achha content banate ho? Camera setup, lighting aur editing "
@@ -42,18 +43,18 @@ CASES = [
     {"id": "e2e-08", "text": "Bitcoin trading course karwana?", "lang": "Roman Hinglish", "expect": "INSTITUTE"},
     {"id": "e2e-09", "text": "Tally Prime course kitne mahine ka hai?", "lang": "Roman Hinglish", "expect": "INSTITUTE"},
     {"id": "e2e-10", "text": "फीस कितनी है?", "lang": "Devanagari Hindi", "expect": "INSTITUTE"},
-    # --- Video questions (5) ---
-    {"id": "e2e-11", "text": "Bhai ye vlog kis camera se shoot kiya?", "lang": "Roman Hinglish", "expect": "LLM"},
-    {"id": "e2e-12", "text": "Which camera did you use?", "lang": "English", "expect": "LLM"},
-    {"id": "e2e-13", "text": "यह वीडियो कहां शूट हुआ है?", "lang": "Devanagari Hindi", "expect": "LLM"},
-    {"id": "e2e-14", "text": "Is video me konsa mic use kiya?", "lang": "Roman Hinglish", "expect": "LLM"},
-    {"id": "e2e-15", "text": "What editing software do you use?", "lang": "English", "expect": "LLM"},
-    # --- Praise (5) ---
-    {"id": "e2e-16", "text": "Nice video bro", "lang": "English", "expect": "LLM"},
-    {"id": "e2e-17", "text": "Bahut achha video tha bhai", "lang": "Roman Hinglish", "expect": "LLM"},
-    {"id": "e2e-18", "text": "बहुत बढ़िया वीडियो", "lang": "Devanagari Hindi", "expect": "LLM"},
-    {"id": "e2e-19", "text": "Great job, keep it up", "lang": "English", "expect": "LLM"},
-    {"id": "e2e-20", "text": "Mast video yaar", "lang": "Roman Hinglish", "expect": "LLM"},
+    # --- Video questions (5) — ab facts nahi milti to needs_owner (skip, reply nahi) ---
+    {"id": "e2e-11", "text": "Bhai ye vlog kis camera se shoot kiya?", "lang": "Roman Hinglish", "expect": "SKIP"},
+    {"id": "e2e-12", "text": "Which camera did you use?", "lang": "English", "expect": "SKIP"},
+    {"id": "e2e-13", "text": "यह वीडियो कहां शूट हुआ है?", "lang": "Devanagari Hindi", "expect": "SKIP"},
+    {"id": "e2e-14", "text": "Is video me konsa mic use kiya?", "lang": "Roman Hinglish", "expect": "SKIP"},
+    {"id": "e2e-15", "text": "What editing software do you use?", "lang": "English", "expect": "SKIP"},
+    # --- Praise (5) — ab template thanks (LLM nahi) ---
+    {"id": "e2e-16", "text": "Nice video bro", "lang": "English", "expect": "PRAISE"},
+    {"id": "e2e-17", "text": "Bahut achha video tha bhai", "lang": "Roman Hinglish", "expect": "PRAISE"},
+    {"id": "e2e-18", "text": "बहुत बढ़िया वीडियो", "lang": "Devanagari Hindi", "expect": "PRAISE"},
+    {"id": "e2e-19", "text": "Great job, keep it up", "lang": "English", "expect": "PRAISE"},
+    {"id": "e2e-20", "text": "Mast video yaar", "lang": "Roman Hinglish", "expect": "PRAISE"},
     # --- Emoji (4) ---
     {"id": "e2e-21", "text": "🔥", "lang": None, "expect": "EMOJI"},
     {"id": "e2e-22", "text": "👍🏽", "lang": None, "expect": "EMOJI"},
@@ -79,11 +80,17 @@ CASES = [
     {"id": "e2e-36", "text": "   ", "lang": None, "expect": "SKIP"},
     {"id": "e2e-37", "text": "...", "lang": None, "expect": "SKIP"},
     # --- Very long (1) ---
-    {"id": "e2e-38", "text": LONG_COMMENT, "lang": "Roman Hinglish", "expect": "LLM"},
+    {"id": "e2e-38", "text": LONG_COMMENT, "lang": "Roman Hinglish", "expect": "PRAISE"},
     # --- Comment with URL (1) ---
     {"id": "e2e-39", "text": "Mera channel dekho https://youtube.com/@mine", "lang": "Roman Hinglish", "expect": "SKIP"},
     # --- Trigger (1) ---
     {"id": "e2e-40", "text": "Guide please", "lang": "English", "expect": "TRIGGER"},
+    # --- Bot ka sawaal (1) — reply nahi, owner khud jawab de (asks_if_bot) ---
+    {"id": "e2e-41", "text": "Bot ho kya tum?", "lang": "Roman Hinglish", "expect": "SKIP"},
+    # --- Camera ka factual sawaal (1) — owner_facts khali hai to needs_owner skip ---
+    {"id": "e2e-42", "text": "Kaunsa camera use karte ho?", "lang": "Roman Hinglish", "expect": "SKIP"},
+    # --- Normal LLM path (1) — na praise, na institute, na factual ---
+    {"id": "e2e-43", "text": "Vlog kaise banate ho?", "lang": "Roman Hinglish", "expect": "LLM"},
 ]
 
 
@@ -104,7 +111,7 @@ def _decision_type(status, reason):
         return "SKIP"
     if status == "failed":
         return "FAILED"
-    return {"emoji": "EMOJI", "trigger": "TRIGGER",
+    return {"emoji": "EMOJI", "trigger": "TRIGGER", "praise": "PRAISE",
             "institute": "INSTITUTE", "llm": "LLM"}.get(reason, status.upper())
 
 
@@ -206,7 +213,7 @@ def main_e2e():
 
     # --- Report section ---
     out = []
-    out.append("## Step 2 — End-to-End: 40 comments (mock only)\n")
+    out.append(f"## Step 2 — End-to-End: {len(CASES)} comments (mock only)\n")
     out.append(
         "**Setup:** `MODE=auto` + `live=True` (sirf test process me), "
         "`FakeYouTube` + `FakeLLM`, `time.sleep` 0, live cap 100 (runtime). "

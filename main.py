@@ -18,6 +18,7 @@ import config  # MODE, delays, limits, emoji lists
 import db  # saara database code db.py me
 import filters  # rule-based skip + emoji_kind
 import pipeline  # comment -> reply ka EK path (test_institute bhi yahi use karta hai)
+import templates  # fixed templates (emoji / praise / institute)
 import triggers  # keyword canned replies
 import youtube  # official YouTube Data API calls
 import mock_youtube  # --mock / --mock-llm: test ke liye fake YouTube + fake LLM
@@ -176,7 +177,7 @@ def run(live=False):
     if not comments:
         print("Koi naya comment nahi mila jo process karne layak ho.")
 
-    counts = {"emoji": 0, "trigger": 0, "llm": 0, "institute": 0,
+    counts = {"emoji": 0, "trigger": 0, "llm": 0, "institute": 0, "praise": 0,
               "draft": 0, "posted": 0, "failed": 0}
     posted_this_run = 0  # auto mode: kitne replies abhi post ho chuke
 
@@ -199,7 +200,7 @@ def run(live=False):
                 print(f"[SKIP] (emoji_cap) {short}")
                 continue
             # Template me {e} = viewer ka apna emoji wapas; random template se variety
-            reply = random.choice(config.EMOJI_REPLY_TEMPLATES).format(e=text.strip())
+            reply = templates.emoji_reply(ai._detect_language(text), text.strip())
             source = "emoji"
             counts["emoji"] += 1
         elif kind in ("negative", "unknown"):
@@ -236,16 +237,24 @@ def run(live=False):
                     notes = youtube.get_video_notes(c["video_id"])  # video_notes/<id>.md ho to
                     return title, (description + "\n\n" + notes).strip()
 
+                def _video_notes():
+                    # video_notes/<id>.md — owner-fact (camera/mic) lookup ke liye
+                    return youtube.get_video_notes(c["video_id"])
+
                 label, reply, _chunks, reason = pipeline.handle_comment(
                     text, video_ctx=_video_ctx,
                     institute_enabled=config.INSTITUTE_MODE,
+                    notes_fn=_video_notes,
                 )
-                source = "institute" if label == "institute_info" else "llm"
+                source = ("institute" if label == "institute_info"
+                          else "praise" if label == "praise" else "llm")
 
                 if reason:
-                    # reason = skip (criticism/spam/personal/mode off) ya fail
+                    # reason = skip (criticism/spam/personal/mode off/bot-ka-sawaal/
+                    #              owner-jaankari-nahi) ya fail
                     status = "skipped" if reason in (
-                        "criticism", "spam", "personal_question", "institute_mode_off"
+                        "criticism", "spam", "personal_question", "institute_mode_off",
+                        "asks_if_bot", "needs_owner"
                     ) else "failed"
                     db.save_reply(c["comment_id"], c["video_id"], text, "", status, reason)
                     skips[reason] = skips.get(reason, 0) + 1

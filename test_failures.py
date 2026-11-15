@@ -79,7 +79,7 @@ class _Rate403(Exception):
 def test_llm_failure_retries_next_run():
     _fresh_db()
     fake = mock_youtube.FakeYouTube()
-    fake.add_comment("Bhai ye camera kaunsa hai?", comment_id="f-llm-1")
+    fake.add_comment("Vlog kaise banate ho?", comment_id="f-llm-1")
     mock_youtube.install(fake)
     # Pehla reply call fail (429 jaisa), doosra success
     mock_youtube.install_llm(mock_youtube.FakeLLM(fail_first=1))

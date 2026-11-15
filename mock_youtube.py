@@ -156,39 +156,41 @@ class FakeLLM:
         ai.LAST_MODEL = "FakeLLM"
         return _REPLIES[lang][kind]
 
-    def answer_institute(self, comment, chunks):
+    def answer_fact(self, fact_text, comment):
+        """Owner fact se reply ka mock — fact ke words, koi promise nahi."""
         if self._reply_fails():
             ai.LAST_MODEL = None
             return None
-        lang = self._lang(comment)
-        phone = knowledge.main_phone()
-        contact = ai._contact_intent(comment)
         ai.LAST_MODEL = "FakeLLM"
-        key = "institute_contact" if contact else "institute_course"
-        return _REPLIES[lang][key].format(phone=phone)
+        return f"{fact_text}, yahi use karte hoon."
+
+    def answer_institute(self, comment, chunks):
+        # Institute reply ab TEMPLATE se banti hai (ai.answer_institute) — mock me
+        # ye path chalti hai, isliye yahan kuch karne ki zarurat nahi.
+        return None
 
 
 # Fixed replies — plain text, no markdown, no URL, no internal words,
-# koi first-person personal claim nahi. Phone knowledge file se hi aata hai.
+# koi first-person personal claim nahi, koi promise nahi, koi AI-phrase nahi.
 _REPLIES = {
     "Devanagari Hindi": {
-        "praise": "बहुत शुक्रिया! ऐसे ही साथ बने रहिए।",
-        "video_question": "शुक्रिया सवाल के लिए! मैं देखकर बता दूंगा।",
-        "other": "वीडियो देखने के लिए शुक्रिया! ऐसे ही साथ रहिए।",
+        "praise": "बहुत धन्यवाद! ऐसे ही साथ बने रहिए 🙏",
+        "video_question": "यह बात वीडियो में नहीं है, इसलिए कुछ नहीं बताऊँगा।",
+        "other": "वीडियो देखने के लिए धन्यवाद! ऐसे ही बने रहिए 🙏",
         "institute_course": "कोर्स की फीस और डिटेल्स के लिए इंस्टीट्यूट को कॉल करें: {phone}।",
         "institute_contact": "एडमिशन और पते की जानकारी के लिए इंस्टीट्यूट को कॉल करें: {phone}।",
     },
     "Roman Hinglish": {
         "praise": "Bahut shukriya! Aise hi saath bane rahiye.",
-        "video_question": "Sawaal ke liye shukriya! Main dekh kar bata dunga.",
+        "video_question": "Ye baat video me nahi hai, isliye kuch nahi bata sakta.",
         "other": "Video dekhne ke liye shukriya! Aise hi saath rahiye.",
         "institute_course": "Course ki fees aur details ke liye institute ko call karein: {phone}.",
         "institute_contact": "Admission aur address ki jaankari ke liye institute ko call karein: {phone}.",
     },
     "English": {
-        "praise": "Thank you so much! Glad you liked it.",
-        "video_question": "Thanks for asking! I will check and let you know.",
-        "other": "Thanks for watching! Stay tuned for more.",
+        "praise": "Thank you so much! Love the support.",
+        "video_question": "That detail isn't in the video, so I can't say it for sure.",
+        "other": "Thanks for watching! Love the support.",
         "institute_course": "For course fees and details, please call the institute: {phone}.",
         "institute_contact": "For admission and address details, please call the institute: {phone}.",
     },
@@ -208,10 +210,15 @@ def install(fake=None):
 
 
 def install_llm(fake=None):
-    """ai.make_reply / ai.answer_institute / intent._llm_classify replace karo."""
+    """ai.make_reply / ai.answer_fact / intent._llm_classify replace karo.
+
+    Institute reply ab template se banti hai (ai.answer_institute) — us path ko
+    real chhodte hain, sirf LLM classification ko None karte hain (network nahi).
+    """
     fake = fake or FakeLLM()
     ai.make_reply = fake.make_reply
-    ai.answer_institute = fake.answer_institute
+    ai.answer_fact = fake.answer_fact
+    ai._llm_classify_course = lambda comment, records: None
     intent._llm_classify = fake.classify
     logger.info("FakeLLM installed — real Groq/Gemini call nahi hogi")
     return fake

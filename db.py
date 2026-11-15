@@ -194,6 +194,18 @@ def recent_replies(limit=20, status=None, today_only=False):
     return _db().execute(sql, params).fetchall()
 
 
+def owner_rows(limit=50):
+    """needs_owner / asks_if_bot rows — owner khud jawab de (comment + video + link)."""
+    return _db().execute(
+        "SELECT r.comment_id, r.video_id, r.reason, r.comment, r.created_at, "
+        "COALESCE(v.title, '') "
+        "FROM replies r LEFT JOIN videos v ON v.video_id = r.video_id "
+        "WHERE r.reason IN ('needs_owner', 'asks_if_bot') "
+        "ORDER BY r.created_at DESC, r.rowid DESC LIMIT ?",
+        (limit,),
+    ).fetchall()
+
+
 def reply_stats():
     """review.py --stats ke liye: (total, status-wise, reason-wise, aaj status-wise)."""
     conn = _db()

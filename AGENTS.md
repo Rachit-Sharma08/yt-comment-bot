@@ -77,6 +77,43 @@
 - **Jo jaankari video context me nahi hai wo andaze se nahi bolni** — na pata
   ho to comment ki language me bolo ki dekh ke batata hoon.
 
+## AWAAZ + JAANKARI RULES (voice + facts — Step 1 & 2)
+
+### Awaaz (voice)
+
+- **Bot kabhi apni taraf se koi nayi personal baat nahi bolega** — kya kiya,
+  kahan gaya, kaunsa camera/mic, kya khaya, kya mood me tha. Jo baat file me
+  likhi nahi hai, wo nahi boli jayegi.
+- **Institute channel par "hum / hamare / humari" ki awaaz** (team ki tarah).
+  Kabhi third person me mat bolo — ❌ "ZedKing ke CCC course ki fee..." →
+  ✅ "Hamare CCC course ki fee ₹6,000 hai."
+- **Personal channel par creator ki casual awaaz** — chhote, comment jaisi lines.
+- **Reply me AI-jaise phrases mat likho:** "Sawaal ke liye shukriya",
+  "Thanks for asking", "Feel free to reach out", "I hope this helps",
+  "Glad you enjoyed", "Kripya sampark karein". Em dash (—) aur lambe formal
+  sentences bhi nahi. Chhota, casual, comment jaisi language.
+- **"Bot ho kya / AI hai / real insaan ho / automatic reply hai" type comments
+  par reply KABHI nahi.** db me status `skipped`, reason `asks_if_bot` — owner
+  khud jawab dega. Keywords Hindi, Hinglish aur English me `intent.py` me hain.
+
+### Jaankari (facts) — koi jhootha vaada nahi
+
+- **Bot kabhi vaada nahi karega:** "dekh ke bata hoon", "I'll check and let you
+  know", "baad me bataunga", "get back to you" — ye sab BAN hai (validator
+  reply discard karta hai).
+- **Video ka factual sawaal (camera, mic, editing app, location, music,
+  upload time, gear) ka jawab sirf 2 jagah se aata hai:**
+  1. `video_notes/<video_id>.md` (pehle)
+  2. `knowledge/owner_facts.md` (uske baad)
+- **Reply me jo bhi naam, model, number ya jagah ho wo fact ki line me hubahu
+  hona chahiye** — warna reply discard.
+- **Jawab na mile to reply KABHI nahi** — db me status `skipped`, reason
+  `needs_owner` (owner khud jawab dega; `review.py --owner` se list dikhti hai).
+- **Tareef/feedback par chhota thanks** — `knowledge/voice_samples.md` ke
+  andaaz me (LLM nahi, template).
+- **Thanks/praise/emoji templates ke 8+ variants** rakho (Hinglish, English,
+  Hindi) aur last 5 variants dobara na lage (memory me track).
+
 ## CODING STYLE (mujhe seekhna hai)
 
 - Mai beginner hoon — **code simple rakho.**

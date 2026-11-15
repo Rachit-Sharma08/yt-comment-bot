@@ -81,18 +81,66 @@ NEGATIVE_EMOJIS = ["👎", "😡", "🤬", "😠", "😢", "😭", "🤮", "😒
 
 # {e} = viewer ka apna emoji (comment wapas bhejta hai). Har reply alag lage — random chunta hai.
 # Har template chhota + natural, aur {e} se PEHLE hamesha ek space (na to wo chipak jaaye)
-EMOJI_REPLY_TEMPLATES = [
-    "Thanks yaar {e}",
-    "Shukriya! {e}",
-    "Dhanyavaad {e}",
-    "So sweet, thank you {e}",
-    "Glad you liked it {e}",
-    "Thanks for the love {e}",
-    "Bahut achha laga {e}",
-    "You made my day {e}",
-    "Thanks for watching {e}",
-    "Appreciate it {e}",
-]
+# 3 languages x 8+ variants (voice_samples.md ke andaaz me — casual, chhote)
+EMOJI_REPLY_TEMPLATES = {
+    "Roman Hinglish": [
+        "Thanks yaar {e}", "Shukriya {e}", "Arre waah, thanks {e}",
+        "Dil se shukriya {e}", "Appreciate it {e}", "Shukriya, maza aa gaya {e}",
+        "Thanks a lot {e}", "Thanks bhai, dil khush kar diya {e}",
+        "Love it, thanks for watching {e}", "Mast, thanks yaar {e}",
+    ],
+    "English": [
+        "Thanks a lot {e}", "Appreciate it {e}", "Thank you so much {e}",
+        "Love it, thanks for watching {e}", "Thanks for the love {e}",
+        "You made my day {e}", "Nice one, thanks {e}", "Thanks, glad you liked it {e}",
+        "Cheers for watching {e}", "Thanks for watching {e}",
+    ],
+    "Devanagari Hindi": [
+        "धन्यवाद {e}", "शुक्रिया {e}", "बहुत बढ़िया, धन्यवाद {e}",
+        "दिल से धन्यवाद {e}", "आपका प्यार {e}", "शुक्रिया, मज़ा आ गया {e}",
+        "बहुत बहुत धन्यवाद {e}", "आपके साथ बने रहो {e}", "प्यारा लगा, शुक्रिया {e}",
+        "धन्यवाद दोस्त {e}",
+    ],
+}
+
+# --- Tareef (praise) ka reply: LLM NAHI, seedha template (chhota + casual) ---
+# 3 languages x 8+ variants — voice_samples.md ke andaaz me
+PRAISE_REPLY_TEMPLATES = {
+    "Roman Hinglish": [
+        "Thanks yaar, aise hi support karte rehna 🙏",
+        "Bahut shukriya bhai ❤️",
+        "Arre waah, thanks yaar!",
+        "Dil se shukriya 🙏",
+        "Shukriya bhai, appreciate it ❤️",
+        "Shukriya! Maza aa gaya padhke 😊",
+        "Thanks bhai, dil khush kar diya",
+        "Mast, thanks yaar 😄",
+        "Thanks a lot, bahut achha laga",
+        "Love it yaar, thanks for watching!",
+    ],
+    "English": [
+        "Thanks a lot, means a lot 🙏",
+        "Appreciate it bro ❤️",
+        "Love it, thanks for watching!",
+        "Thanks a lot, really appreciate it 😊",
+        "Thanks for the love!",
+        "You made my day!",
+        "Thanks, that means a lot 🙏",
+        "Cheers for watching!",
+        "Thanks a lot, keep it up!",
+        "Really appreciate it, thanks!",
+    ],
+    "Devanagari Hindi": [
+        "धन्यवाद दोस्त, ऐसे ही साथ बने रहना 🙏",
+        "बहुत बढ़िया, धन्यवाद 🙏",
+        "दिल से धन्यवाद ❤️",
+        "मज़ा आ गया, शुक्रिया 😊",
+        "प्यारा लगा, धन्यवाद 🙏",
+        "बहुत बहुत धन्यवाद दोस्त 🙏",
+        "आपके साथ बने रहो, शुक्रिया ❤️",
+        "शुक्रिया यार 😄",
+    ],
+}
 
 # Roz zyada se zyada itne emoji replies (spam policy: ek jaisa reply repeat na lage)
 MAX_EMOJI_REPLIES_PER_DAY = 40
@@ -104,6 +152,43 @@ CHANNEL_PROFILE = os.getenv("CHANNEL_PROFILE", "personal")
 # INSTITUTE_MODE: True = institute_info comments par knowledge se reply
 # False = unhe "skipped / institute_mode_off" save karo (default safe = False)
 INSTITUTE_MODE = os.getenv("INSTITUTE_MODE", "true").strip().lower() == "true"
+
+# --- Bot ki awaaz (voice) ---
+# CHANNEL_PROFILE se decide hota hai:
+#   personal = creator ki casual awaaz ("Thanks yaar")
+#   zedking  = team ki "hum/hamare" awaaz ("Hamare CCC course ki fee ...")
+# (CHANNEL_PROFILE ka default nahi badla — sirf usse VOICE nikala gaya)
+VOICE = "creator" if CHANNEL_PROFILE == "personal" else "we"
+
+# Style examples (LLM prompt me few-shot) + owner ki apni jaankari (facts)
+VOICE_SAMPLES_FILE = "knowledge/voice_samples.md"
+OWNER_FACTS_FILE = "knowledge/owner_facts.md"
+
+# --- AI-jaise phrases: reply me KABHI nahi aane chahiye ---
+# Validator inhe pakde to reply discard (aur reply_checks bhi check karta hai)
+AI_LIKE_PHRASES = [
+    "sawaal ke liye shukriya", "thanks for asking", "feel free to reach out",
+    "i hope this helps", "hope this helps", "glad you enjoyed", "glad you liked",
+    "kripya sampark karein", "please feel free", "happy to help",
+    "let me know if", "if you have any questions", "don't hesitate",
+    "as an ai", "as a language model", "here is the answer", "here's the answer",
+    "thanks for your question", "thank you for asking", "feel free to ask",
+    "i hope that helps", "hope that helps", "at your service",
+]
+
+# --- Wade (promise): reply me KABHI nahi ---
+# "dekh ke bata hoon" / "I'll check and let you know" jaisa koi vaada nahi —
+# jo jaankari owner_facts.md ya video_notes me nahi hai, wo bot bolega hi nahi
+PROMISE_PHRASES = [
+    "dekh ke bata", "dekhke bata", "dekh kar bata", "dekhkar bata",
+    "check karke bata", "check kar ke bata", "pakad ke bata",
+    "baad me bata", "baad mein bata", "baad me dekh", "baad me bata dunga",
+    "baad me bataungi", "baad me batayenge", "baad mein batayenge",
+    "get back to you", "i'll check and let you know", "i will check and let you know",
+    "check and let you know", "let you know soon", "will get back",
+    "looking into it", "i'll look into it", "i will look into it",
+    "जानकारी लेकर बताएंगे", "देखकर बताऊंगा", "जाँच करके बताऊंगा", "बताएंगे",
+]
 
 # Knowledge file (chunks yahi se banenge — knowledge.py isko padhta hai)
 KNOWLEDGE_FILE = "knowledge/zedking_info.md"
@@ -156,56 +241,150 @@ COURSE_STOPWORDS = [
     "fees", "fee", "kitni", "kitna", "kitne", "kaise", "kya", "hai", "zedking",
 ]
 
-# --- Step 3: Fixed templates (LLM BILKUL nahi) — 3 cases x 3 languages x 2 variants ---
-# clarify  = course ka naam clear nahi (gate BLOCKED) — {A}/{B} = short_name
-# unknown  = jawab file me nahi / LLM fail / discard — {phone} = institute main number
+# --- Institute templates (LLM BILKUL nahi) — 3 cases x 3 languages x 2-3 variants ---
+# Awaaz: "hum/hamare" (team ki tarah). Kahi "ZedKing ke..." nahi, "please/kripya" nahi,
+# aur koi wada nahi ("bata denge" jaisa future promise bhi nahi).
+# clarify  = course ka naam clear nahi — {A}/{B} = short_name
+# unknown  = jawab file me nahi — {phone} = institute main number
 # no_course = comment me course ka naam hi na mile
-# Phone sirf knowledge file ke contact section se aata hai (knowledge.main_phone).
-# In templates me Koi link NAHI hai (link rule alag se Step 4).
+# not_in_list = course pucha par hamari list me nahi hai — {phone}
 INSTITUTE_TEMPLATES = {
     "clarify": {
         "Roman Hinglish": [
-            "Aap kaunsa course keh rahe hain: {A} ya {B}? Bataiye, fee aur details bata denge.",
-            "Kaun sa course chahiye - {A} ya {B}? Batao, fee aur details bata dete hain.",
+            "Kaun sa course chahiye - {A} ya {B}? Course ka naam likh do.",
+            "Aap {A} ki baat kar rahe ho ya {B} ki? Naam likh do, uski detail yahi hai.",
+            "{A} ya {B} - kaun sa course? Ek naam likh do bas.",
         ],
         "English": [
-            "Which course do you mean: {A} or {B}? Tell us and we will share the fee and details.",
-            "Did you mean {A} or {B}? Let us know, we will share the fee and full details.",
+            "Which course do you mean - {A} or {B}? Just write the course name.",
+            "Is it {A} or {B}? Write the course name and its details are here.",
+            "{A} or {B} - which one? Write the name, that's all.",
         ],
         "Devanagari Hindi": [
-            "आप कौन सा कोर्स कह रहे हैं: {A} या {B}? बताइए, फीस और डिटेल्स बता देंगे।",
-            "कौन सा कोर्स चाहिए - {A} या {B}? बताइए, फीस और डिटेल्स बता देते हैं।",
+            "कौन सा कोर्स चाहिए - {A} या {B}? कोर्स का नाम लिख दीजिए।",
+            "आप {A} की बात कर रहे हैं या {B} की? नाम लिख दीजिए, उसकी जानकारी यहीं है।",
+            "{A} या {B} - कौन सा कोर्स? बस नाम लिख दीजिए।",
         ],
     },
     "unknown": {
         "Roman Hinglish": [
-            "Is baare me sahi jaankari ke liye please call karein: {phone}.",
-            "Sahi jaankari ke liye institute ko call kar lein: {phone}.",
+            "Ye detail abhi hamare paas confirm nahi hai. Call karein: {phone}.",
+            "Is baare me abhi confirm nahi hai humare paas. Call karein: {phone}.",
+            "Ye jaankari abhi confirm nahi hai. Number: {phone}.",
         ],
         "English": [
-            "For the correct information on this, please call: {phone}.",
-            "Please call us for accurate details: {phone}.",
+            "This detail isn't confirmed on our side yet. Call us: {phone}.",
+            "We can't confirm this one right now. Call us: {phone}.",
+            "Not confirmed yet. Phone: {phone}.",
         ],
         "Devanagari Hindi": [
-            "इस बारे में सही जानकारी के लिए कृपया कॉल करें: {phone}।",
-            "सही जानकारी के लिए कृपया इन्हें कॉल करें: {phone}।",
+            "यह जानकारी अभी हमारे पास confirm नहीं है। कॉल करें: {phone}।",
+            "इस बारे में अभी पुष्टि नहीं है। कॉल करें: {phone}।",
+            "अभी confirm नहीं है। फोन: {phone}।",
         ],
     },
     "no_course": {
         "Roman Hinglish": [
-            "Aap kaunse course ke baare me pooch rahe hain? Course ka naam bataiye.",
-            "Kaun sa course jaanna hai? Course ka naam bata do, bata dete hain.",
+            "Kaun sa course jaanna hai? Course ka naam likh do.",
+            "Course ka naam likh do - list me se koi bhi ek.",
+            "Kis course ki baat ho rahi hai? Naam likh do bas.",
         ],
         "English": [
-            "Which course are you asking about? Please tell us the course name.",
-            "What course do you want to know about? Please share the course name.",
+            "Which course are you asking about? Write the course name.",
+            "Write the course name - any one from our list.",
+            "Which course do you mean? Just write the name.",
         ],
         "Devanagari Hindi": [
-            "आप किस कोर्स के बारे में पूछ रहे हैं? कोर्स का नाम बताइए।",
-            "कौन सा कोर्स जानना है? कोर्स का नाम बताइए, बता देंगे।",
+            "किस कोर्स के बारे में पूछ रहे हैं? कोर्स का नाम लिख दीजिए।",
+            "कोर्स का नाम लिख दीजिए - हमारी लिस्ट में से कोई भी एक।",
+            "किस कोर्स की बात हो रही है? नाम लिख दीजिए।",
+        ],
+    },
+    "not_in_list": {
+        "Roman Hinglish": [
+            "Ye course abhi hamari list me nahi hai. Available courses ke liye call karein: {phone}.",
+            "Ye course hamari list me nahi hai abhi. Course list ke liye call karein: {phone}.",
+            "Hamari list me ye course nahi hai. Call karein: {phone}.",
+        ],
+        "English": [
+            "This course isn't on our list yet. For our available courses call us: {phone}.",
+            "We don't have this course on the list right now. Call us for the course list: {phone}.",
+            "This course isn't listed with us yet. Call us: {phone}.",
+        ],
+        "Devanagari Hindi": [
+            "यह कोर्स अभी हमारी लिस्ट में नहीं है। उपलब्ध कोर्स के लिए कॉल करें: {phone}।",
+            "यह कोर्स अभी हमारी लिस्ट में नहीं है। कोर्स लिस्ट के लिए कॉल करें: {phone}।",
+            "हमारी लिस्ट में यह कोर्स नहीं है। कॉल करें: {phone}।",
         ],
     },
 }
+
+# --- Step 3 (naya): course field ke reply — sirf TEMPLATE, values file se hubahu ---
+# Sentence = prefix + field fragments (ek se zyada field ek hi reply me) [+ link line].
+# {name} = course short_name, {facts} = field fragments joined, {value} = file ka value
+COURSE_SENTENCE_TEMPLATES = {
+    "Roman Hinglish": [
+        "Hamare {name} course {facts}.",
+        "Hamare {name} wale course {facts}.",
+        "Hamare {name} course - {facts}.",
+    ],
+    "English": [
+        "Our {name} course {facts}.",
+        "In our {name} course {facts}.",
+        "Our {name} course - {facts}.",
+    ],
+    "Devanagari Hindi": [
+        "हमारे {name} कोर्स {facts}।",
+        "हमारे {name} वाले कोर्स {facts}।",
+        "हमारे {name} कोर्स - {facts}।",
+    ],
+}
+
+# {value} = file se hubahu value (fee/duration/eligibility/mode/certificate)
+COURSE_FIELD_PHRASES = {
+    "fee": {
+        "Roman Hinglish": ["fee {value} hai", "fees {value} hai", "fee {value} lagti hai"],
+        "English": ["fee is {value}", "fee comes to {value}", "fee is {value}"],
+        "Devanagari Hindi": ["की फीस {value} है", "का शुल्क {value} है", "की फीस {value} रहती है"],
+    },
+    "duration": {
+        "Roman Hinglish": ["duration {value} hai", "duration {value} rakhi hai", "ye {value} ka course hai"],
+        "English": ["duration is {value}", "it runs for {value}", "duration is {value}"],
+        "Devanagari Hindi": ["की अवधि {value} है", "का दौर {value} रहता है", "की अवधि {value} रहती है"],
+    },
+    "eligibility": {
+        "Roman Hinglish": ["eligibility {value} chahiye", "eligibility {value} honi chahiye", "eligibility {value} wali baat hai"],
+        "English": ["eligibility needs {value}", "you need {value}", "eligibility needs {value}"],
+        "Devanagari Hindi": ["के लिए {value} चाहिए", "में {value} पात्र हैं", "के लिए {value} होना चाहिए"],
+    },
+    "mode": {
+        "Roman Hinglish": ["{value} mode me hai", "{value} chalata hai", "{value} me hota hai"],
+        "English": ["it runs {value}", "it is available {value}", "mode is {value}"],
+        "Devanagari Hindi": ["{value} चलता है", "{value} में चलता है", "{value} मोड है"],
+    },
+    "certificate": {
+        "Roman Hinglish": ["certificate {value} milta hai", "{value} certificate milta hai", "certificate {value} deta hai"],
+        "English": ["certificate {value} is given", "you get {value}", "certificate {value}"],
+        "Devanagari Hindi": ["में {value} मिलता है", "के बाद {value} मिलता है", "में certificate {value} है"],
+    },
+}
+
+# Ek se zyada field jodne ke liye beech ka connector
+COURSE_CONNECTORS = {
+    "Roman Hinglish": " aur ",
+    "English": " and ",
+    "Devanagari Hindi": " और ",
+}
+
+# Course matching ke liye stopwords (course name ka token na maana jaye)
+COURSE_MATCH_STOPWORDS = COURSE_STOPWORDS + [
+    "ki", "ka", "ke", "me", "mein", "hai", "hain", "ho", "kya", "kitni", "kitna",
+    "kitne", "kaise", "batao", "bata", "kar", "karna", "karo", "karein", "karwana",
+    "and", "for", "the", "is", "are", "a", "an", "of", "to", "in", "on", "my",
+    "this", "that", "what", "which", "how", "you", "your", "please", "tell",
+    "know", "about", "duration", "eligibility", "certificate", "mode", "admission",
+    "address", "contact", "batch", "session", "year", "years",
+]
 
 # --- Step 4: Link rule settings ---
 # Course-specific fee/duration/eligibility reply ke aakhir me link add karna hai
@@ -217,19 +396,19 @@ MAX_LINK_REPLIES_PER_DAY = 15
 # Har part alag — jo allowed hai (cap ke hisaab se) wahi lagao
 CONTACT_REPLY_PARTS = {
     "Roman Hinglish": {
-        "phone": ["Call karein: {phone}.", "Phone: {phone}."],
-        "address": ["Address: {address}.", "Pata: {address}."],
-        "link": ["Admission: {url}", "Admission form yahan: {url}"],
+        "phone": ["Call karein: {phone}.", "Phone: {phone}.", "Hamara number: {phone}."],
+        "address": ["Address: {address}.", "Pata: {address}.", "Hamara address: {address}."],
+        "link": ["Admission: {url}", "Admission form yahan: {url}", "Dakhila yahan: {url}"],
     },
     "English": {
-        "phone": ["Call us: {phone}.", "Phone: {phone}."],
-        "address": ["Address: {address}.", "Our address: {address}."],
-        "link": ["Admission: {url}", "Admission form here: {url}"],
+        "phone": ["Call us: {phone}.", "Phone: {phone}.", "Our number: {phone}."],
+        "address": ["Address: {address}.", "Our address: {address}.", "We're at: {address}."],
+        "link": ["Admission: {url}", "Admission form here: {url}", "Apply here: {url}"],
     },
     "Devanagari Hindi": {
-        "phone": ["कॉल करें: {phone}।", "फोन: {phone}।"],
-        "address": ["पता: {address}।", "हमारा पता: {address}।"],
-        "link": ["दाखिला: {url}", "दाखिला फॉर्म यहाँ: {url}"],
+        "phone": ["कॉल करें: {phone}।", "फोन: {phone}।", "हमारा नंबर: {phone}।"],
+        "address": ["पता: {address}।", "हमारा पता: {address}।", "हम यहाँ हैं: {address}।"],
+        "link": ["दाखिला: {url}", "दाखिला फॉर्म यहाँ: {url}", "यहाँ अप्लाई करें: {url}"],
     },
 }
 
