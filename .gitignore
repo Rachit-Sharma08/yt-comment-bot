@@ -8,8 +8,12 @@ venv/
 __pycache__/
 *.pyc
 
-# NOTE: bot.db / bot.log / bot.lock / STOP ab deliberately ignore me nahi hain
-# (tumhe ye dekhne/track karne hain). Par:
-#   - bot.db aur bot.log me comment TEXT hota hai (viewers ka personal data) —
-#     inhe commit mat karo jab tak data nahi hata (ya empty bot.db hi commit karo).
-#   - STOP file commit mat karo — usse bot hamesha band reh jayega.
+# Data + logs + runtime files — kabhi commit nahi
+bot.db
+*.db-journal
+bot.log
+STOP
+bot.lock
+
+# Agent ka apna folder — project me nahi chahiye
+.opencode/
