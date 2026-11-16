@@ -333,6 +333,38 @@ INSTITUTE_TEMPLATES = {
             "हमारी लिस्ट में यह कोर्स नहीं है। कॉल करें: {phone}।",
         ],
     },
+    # Step 5: comment ka TOPIC group mila — us group ke 1-3 courses ka sawaal
+    # {courses} = short_names joined ("A", "A ya B", "A, B ya C")
+    "topic_pick": {
+        "Roman Hinglish": [
+            "Aap {courses} ke baare me pooch rahe ho?",
+            "Kya aap {courses} ke baare me pooch rahe ho?",
+        ],
+        "English": [
+            "Are you asking about {courses}?",
+            "Do you mean {courses}?",
+        ],
+        "Devanagari Hindi": [
+            "क्या आप {courses} के बारे में पूछ रहे हैं?",
+            "{courses} के बारे में पूछ रहे हैं?",
+        ],
+    },
+    # Step 5: topic group mila par us group ka koi course list me nahi
+    # {courses_page_url} = file ka courses listing URL, {phone} = main number
+    "topic_no_course": {
+        "Roman Hinglish": [
+            "Is topic ka alag course hamari list me nahi mila. Sab courses yahan dekh sakte ho: {courses_page_url}. Call: {phone}.",
+            "Is topic ke liye koi alag course list me nahi hai. Sab courses yahan dekh lo: {courses_page_url}. Call: {phone}.",
+        ],
+        "English": [
+            "We don't have a separate course for this topic. See all courses: {courses_page_url}. Call: {phone}.",
+            "No separate course for this topic right now. All courses here: {courses_page_url}. Call: {phone}.",
+        ],
+        "Devanagari Hindi": [
+            "इस टॉपिक का अलग कोर्स हमारी लिस्ट में नहीं है। सभी कोर्स यहाँ देखें: {courses_page_url}। कॉल: {phone}।",
+            "इस टॉपिक के लिए कोई अलग कोर्स अभी नहीं है। सभी कोर्स यहाँ: {courses_page_url}। कॉल: {phone}।",
+        ],
+    },
 }
 
 # --- Step 2 (rewrite): course field ke reply — sirf TEMPLATE, values file se hubahu ---
@@ -439,6 +471,10 @@ COURSE_MATCH_STOPWORDS = COURSE_STOPWORDS + [
     "this", "that", "what", "which", "how", "you", "your", "please", "tell",
     "know", "about", "duration", "eligibility", "certificate", "mode", "admission",
     "address", "contact", "batch", "session", "year", "years",
+    # Step 5: clarification ke shabd — ye course ke distinctive tokens nahi
+    # ("Course ka naam kya hai?" ab no_course/clarification jaaye, not_in_list nahi)
+    "name", "naam", "kaunsa", "kaun", "kaunsi", "sa", "likh",
+    "popular", "kuch", "sab",
 ]
 
 # --- Step 4: Link rule settings ---

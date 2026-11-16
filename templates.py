@@ -33,7 +33,8 @@ def pick(kind, language, **kw):
     """config.INSTITUTE_TEMPLATES[kind][language] me se ek variant + placeholders bharo.
 
     kind: "clarify" | "unknown" | "no_course" | "not_in_list"
-    kw: {A}, {B} (clarify) ya {phone} (unknown/no_course/not_in_list)
+        | "institute_name" | "topic_pick" | "topic_no_course"
+    kw: kind ke placeholders ({A}/{B}, {phone}, {courses}, {courses_page_url}...)
     """
     variants = config.INSTITUTE_TEMPLATES[kind].get(language)
     if not variants:
@@ -59,6 +60,33 @@ def no_course(language):
 def not_in_list(language):
     """Course pucha par wo hamari list me hai hi nahi."""
     return pick("not_in_list", language, phone=knowledge.main_phone())
+
+
+def topic_pick(language, courses):
+    """Topic group ke 1-3 courses ka sawaal (Step 5).
+
+    1 course ho to confirm question ke saath fee/duration ek line me bhi.
+    courses: knowledge.course_records() ke records (max 3).
+    """
+    names = [c["short_name"] for c in courses]
+    sep = ("or" if language == "English"
+           else "या" if language == "Devanagari Hindi" else "ya")
+    joined = (names[0] if len(names) == 1
+              else ", ".join(names[:-1]) + f" {sep} " + names[-1])
+    reply = pick("topic_pick", language, courses=joined)
+    if len(courses) == 1:
+        line = course_reply(language, courses[0], ["fee", "duration"])
+        if line:
+            reply = f"{reply} {line}"
+    return reply
+
+
+def topic_no_course(language):
+    """Topic group mila par us group ka course list me nahi (Step 5)."""
+    # File me URL na mile to site ka stable listing URL (whitelist me hai)
+    url = knowledge.courses_page_url() or "https://zedking.in/courses"
+    return pick("topic_no_course", language,
+                courses_page_url=url, phone=knowledge.main_phone())
 
 
 def unknown(language):

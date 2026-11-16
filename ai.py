@@ -736,6 +736,7 @@ def answer_institute(comment, chunks=None):
     - Course match (rule pehle, phir LLM classify) -> fee/duration/eligibility/mode/
       certificate ka template reply (values file se hubahu) + course link
     - Course ambiguous -> clarification template
+    - Topic group mila (0 course match) -> us group ke courses ka sawaal (Step 5)
     - Course list me hi nahi -> "hamari list me nahi hai" template
     - Pucha hua field file me nahi (None/UNKNOWN) -> unknown template (phone)
 
@@ -768,13 +769,25 @@ def answer_institute(comment, chunks=None):
         # Ek weak candidate — course ka naam clear nahi, poochho
         return templates.no_course(language)
     if record is None and not candidates:
+        # Contact intent pehle — address/admission wala comment topic par na jaaye
+        if _contact_intent(comment):
+            return _contact_reply(language)
+        # Step 5: topic group se course suggest (LLM se pehle — free, file se)
+        group = knowledge.topic_group(comment)
+        if group:
+            courses = knowledge.group_courses(group)
+            if courses:
+                return templates.topic_pick(language, courses)
+            return templates.topic_no_course(language)
         # Rule se kuch nahi mila — LLM sirf yahan classify karne me lagta hai
         record = _llm_classify_course(comment, records)
     if record is None:
         # Abhi tak koi course match nahi
         if _contact_intent(comment):
             return _contact_reply(language)
-        if _mentions_course(comment):
+        # Step 5: course word + distinctive tokens = "list me nahi hai";
+        # tokens khali = naam hi nahi pucha gaya -> clarification (no_course)
+        if _mentions_course(comment) and _match_tokens(comment):
             return templates.not_in_list(language)
         return templates.no_course(language)
 

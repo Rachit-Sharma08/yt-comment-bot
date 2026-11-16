@@ -173,6 +173,76 @@ def institute_name_city():
     return "", ""
 
 
+# --- Step 5: topic-group course matching (spec) ---
+# Comment ke topic word se group; group ke courses heading +
+# "- Kya sikhaya:" line se match hote hain (word-boundary, sirf ye 2 jagah —
+# poora chunk text bahut noisy hai).
+TOPIC_GROUPS = {
+    "editing": ["editing", "video editing", "photoshop", "design",
+                "graphic", "canva", "corel"],
+    "marketing": ["marketing", "seo", "ads", "social media"],
+    "accounting": ["accounting", "tally", "gst"],
+    "programming": ["programming", "python", "java", "web"],
+    "typing": ["typing", "steno", "office", "excel"],
+    "govt_job": ["govt job", "hssc", "ssc", "bank"],
+}
+
+
+def _word_re(word):
+    # word-boundary (case-insensitive): "design" seedha "Designing" nahi pakadta
+    return re.compile(r"(?<![a-z0-9])" + re.escape(word) + r"(?![a-z0-9])",
+                      re.I)
+
+
+def topic_group(comment):
+    """Comment ka topic group (spec Step 5) — koi word na mile to None.
+
+    Ek se zyada group mile to jisme sabse zyada words match hue (tie = pehla).
+    """
+    low = (comment or "").lower()
+    best, best_n = None, 0
+    for group, words in TOPIC_GROUPS.items():
+        n = sum(1 for w in words if _word_re(w).search(low))
+        if n > best_n:
+            best, best_n = group, n
+    return best
+
+
+def group_courses(group, limit=3):
+    """Group ke courses — zyada matched words wale pehle, phir file order.
+
+    Spec: 1-3 courses; zyada match ho to top-3 (limit). Sirf heading +
+    "- Kya sikhaya:" line par match hota hai.
+    """
+    words = TOPIC_GROUPS.get(group)
+    if not words:
+        return []
+    pats = [_word_re(w) for w in words]
+    by_id = {r["course_id"]: r for r in course_records()}
+    scored = []
+    for c in load_chunks():
+        m = re.match(r"^(\d+)\.\s*(.+)$", c["heading"])
+        if not m or m.group(1) not in by_id:
+            continue  # course chunk nahi (branch/section)
+        km = re.search(r"^- Kya sikhaya:\s*(.+)$", c["text"], re.M)
+        text = c["heading"] + (" " + km.group(1) if km else "")
+        n = sum(1 for p in pats if p.search(text))
+        if n:
+            scored.append((-n, int(m.group(1)), by_id[m.group(1)]))
+    scored.sort(key=lambda x: (x[0], x[1]))
+    return [r for _, _, r in scored[:limit]]
+
+
+def courses_page_url():
+    """Courses listing page URL — file ke text/source se (Step 5)."""
+    for c in load_chunks():
+        m = re.search(r"https://zedking\.in/courses(?![/\w])",
+                      c.get("source", "") + " " + c["text"])
+        if m:
+            return m.group(0)
+    return ""
+
+
 def allowed_source_urls():
     """Knowledge file ke saare source URLs ka set (validator URL whitelist ke liye).
 
@@ -180,8 +250,10 @@ def allowed_source_urls():
     """
     urls = set()
     for c in load_chunks():
-        src = c.get("source", "")
-        for u in re.findall(r"https?://[^\s,]+", src):
+        # Step 5: courses page URL sirf chunk TEXT me hai (source me course ka
+        # apna URL hota hai) — isliye source ke saath text bhi scan karte hain
+        blob = c.get("source", "") + " " + c["text"]
+        for u in re.findall(r"https?://[^\s,]+", blob):
             u_clean = u.rstrip(".,)")
             if "zedking.in" in u_clean.lower():
                 urls.add(u_clean)
