@@ -247,7 +247,7 @@ COURSE_STOPWORDS = [
 # aur koi wada nahi ("bata denge" jaisa future promise bhi nahi).
 # clarify  = course ka naam clear nahi — {A}/{B} = short_name
 # unknown  = jawab file me nahi — {phone} = institute main number
-# no_course = comment me course ka naam hi na mile
+# no_course = course ka naam hi na mile — clarification + popular courses + URL
 # not_in_list = course pucha par hamari list me nahi hai — {phone}
 INSTITUTE_TEMPLATES = {
     # Step 4: institute/centre ka NAAM poocha ho — overview se naam + city
@@ -299,21 +299,20 @@ INSTITUTE_TEMPLATES = {
             "अभी confirm नहीं है। फोन: {phone}।",
         ],
     },
+    # Step 6: course ka naam hi nahi mila — clarification + popular courses
+    # {A}/{B}/{C} = pehle 3 courses, {courses_page_url} = listing URL
     "no_course": {
         "Roman Hinglish": [
-            "Kaun sa course jaanna hai? Course ka naam likh do.",
-            "Course ka naam likh do, list me se koi bhi ek.",
-            "Kis course ki baat ho rahi hai? Naam likh do bas.",
+            "Kaunsa course jaanna chahte ho? Kuch popular courses: {A}, {B}, {C}. Sab courses: {courses_page_url}",
+            "Kaun sa course chahiye? Popular: {A}, {B}, {C}. Sab courses dekh lo: {courses_page_url}",
         ],
         "English": [
-            "Which course are you asking about? Write the course name.",
-            "Write the course name, any one from our list.",
-            "Which course do you mean? Just write the name.",
+            "Which course do you want to know about? Some popular courses: {A}, {B}, {C}. All courses: {courses_page_url}",
+            "Which course are you asking about? Popular ones: {A}, {B}, {C}. See all courses: {courses_page_url}",
         ],
         "Devanagari Hindi": [
-            "किस कोर्स के बारे में पूछ रहे हैं? कोर्स का नाम लिख दीजिए।",
-            "कोर्स का नाम लिख दीजिए, हमारी लिस्ट में से कोई भी एक।",
-            "किस कोर्स की बात हो रही है? नाम लिख दीजिए।",
+            "कौन साकोर्स जानना चाहते हैं? कुछलोकप्रियकोर्स: {A}, {B}, {C}. सभी कोर्स: {courses_page_url}",
+            "कौन सेकोर्स के बारे में पूछ रहे हैं? लोकप्रिय कोर्स: {A}, {B}, {C}. सभी कोर्स देखें: {courses_page_url}",
         ],
     },
     "not_in_list": {

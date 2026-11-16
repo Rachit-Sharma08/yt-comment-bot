@@ -53,8 +53,17 @@ def clarify(language, titles):
 
 
 def no_course(language):
-    """Comment me course ka naam hi nahi mila (ya match clear nahi)."""
-    return pick("no_course", language)
+    """Comment me course ka naam hi nahi mila — clarification (Step 6).
+
+    {A}/{B}/{C} = pehle 3 courses (featured list abhi config me nahi hai).
+    """
+    names = [r["short_name"] for r in knowledge.course_records()[:3]]
+    if len(names) < 3:  # kam courses ho to A/B/C placeholders bhare rehne chahiye
+        names = (names * 3)[:3]
+    # File me URL na mile to site ka stable listing URL (whitelist me hai)
+    url = knowledge.courses_page_url() or "https://zedking.in/courses"
+    return pick("no_course", language,
+                A=names[0], B=names[1], C=names[2], courses_page_url=url)
 
 
 def not_in_list(language):
