@@ -207,7 +207,8 @@ SYNONYMS = [
     ["duration", "kitne mahine", "kitna time", "length", "mahine", "months", "समय", "अवधि", "कितने महीने"],
     ["address", "kahan", "location", "pata", "where", "kaha", "कहाँ", "पता", "किस जगह"],
     ["admission", "join", "dakhila", "enroll", "apply", "प्रवेश", "दाखिला", "एडमिशन"],
-    ["branch", "centre", "center", "office", "शाखा", "ब्रांच"],
+    ["branch", "centre", "center", "office", "शाखा", "ब्रांच",
+     "institute", "institution", "academy", "संस्थान", "अकादमी"],
     ["contact", "phone", "number", "mobile", "call", "whatsapp", "संपर्क", "नंबर", "फोन"],
     ["timing", "time", "hours", "open", "khula", "समय", "टाइमिंग", "कब खुलता"],
     ["certificate", "certification", "certificate milega", "प्रमाणपत्र", "सर्टिफिकेट"],
@@ -249,6 +250,21 @@ COURSE_STOPWORDS = [
 # no_course = comment me course ka naam hi na mile
 # not_in_list = course pucha par hamari list me nahi hai — {phone}
 INSTITUTE_TEMPLATES = {
+    # Step 4: institute/centre ka NAAM poocha ho — overview se naam + city
+    "institute_name": {
+        "Roman Hinglish": [
+            "Hamara naam {institute_name} hai, {city} me. Courses ya address ke liye poochh sakte ho.",
+            "{institute_name}, {city} me hai. Course ya fees ke baare me bata do.",
+        ],
+        "English": [
+            "Our name is {institute_name}, in {city}. You can ask about courses or address.",
+            "{institute_name} is in {city}. Ask us about courses or fees.",
+        ],
+        "Devanagari Hindi": [
+            "हमारा नाम {institute_name} है, {city} में। कोर्स या पता के लिए पूछ सकते हैं।",
+            "{institute_name}, {city} में है। कोर्स या फीस के बारे में बताइए।",
+        ],
+    },
     "clarify": {
         "Roman Hinglish": [
             "Kaun sa course chahiye: {A} ya {B}? Course ka naam likh do.",

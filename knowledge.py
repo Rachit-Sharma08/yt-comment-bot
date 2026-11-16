@@ -155,6 +155,24 @@ def admission_url():
     return _contact_field("Admission page")
 
 
+def institute_name_city():
+    """Overview section se institute ka naam + city (Step 4 — institute_name intent).
+
+    Naam = "**Naam:** ..." line ka value hubahu; city = overview me
+    "'s" wala shabd (site tagline "Kaithal's Most Trusted..." se).
+    Na mile to "" (crash nahi — caller fall back karega).
+    """
+    for c in load_chunks():
+        if "overview" not in c["heading"].lower():
+            continue
+        m = re.search(r"\*\*Naam[^*]*:\*\*\s*(.+)", c["text"])
+        name = m.group(1).strip() if m else ""
+        m = re.search(r"\b([A-Z][a-z]+)'s\b", c["text"])
+        city = m.group(1) if m else ""
+        return name, city
+    return "", ""
+
+
 def allowed_source_urls():
     """Knowledge file ke saare source URLs ka set (validator URL whitelist ke liye).
 

@@ -682,6 +682,26 @@ def _contact_intent(comment):
     return bool(_CONTACT_INTENT_RE.search(comment))
 
 
+# --- Institute NAME intent (Step 4): institute-context + naam-word ---
+# Dono chahiye: "Centre ka name ?" = yes; "Course ka naam kya hai?" = nahi
+# (usme institute-context word hi nahi). "Aapka naam kya hai?" intent.py me
+# personal_question ban jaata hai — yahan institute-context anchor se aur safe.
+_INSTITUTE_CTX_WORDS = [
+    "institute", "institution", "centre", "center", "academy",
+    "संस्थान", "केंद्र", "अकादमी", "इंस्टीट्यूट",
+]
+_NAME_WORDS = ["name", "naam", "kaun sa", "kaunsi", "kaun se", "नाम"]
+
+
+def _institute_name_intent(comment):
+    """Institute/centre ka NAAM poocha hai? (Step 4 — course intent se pehle)"""
+    low = (comment or "").lower()
+    def _has(words):
+        return any(re.search(r"(?<![a-z0-9])" + re.escape(w) + r"(?![a-z0-9])", low)
+                   for w in words)
+    return _has(_INSTITUTE_CTX_WORDS) and _has(_NAME_WORDS)
+
+
 def _contact_reply(language, with_address=True):
     """Address/admission/contact ka reply — phone + address + admission link (caps ke saath)."""
     import knowledge
@@ -725,6 +745,15 @@ def answer_institute(comment, chunks=None):
 
     language = _detect_language(comment)
     import knowledge
+
+    # --- 0) Institute ka NAAM poocha? (Step 4 — course match se pehle) ---
+    # "Centre ka name ?" -> naam+city template; "Course ka naam?" ye nahi pakadta
+    if _institute_name_intent(comment):
+        name, city = knowledge.institute_name_city()
+        if name and city:
+            return templates.pick(
+                "institute_name", language,
+                institute_name=name, city=city)
 
     records = knowledge.course_records()
     if not records:
