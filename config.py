@@ -147,11 +147,19 @@ MAX_EMOJI_REPLIES_PER_DAY = 40
 
 # --- Institute mode (ZedKing knowledge replies ka switch) ---
 # CHANNEL_PROFILE: "personal" = purana vlog bot, "zedking" = institute channel
-# SAFETY: institute replies sirf tab LIVE post hongi jab profile "zedking" ho
+# SAFETY: institute reply LIVE tabhi jab profile "zedking" ho YA user ne khud
+# INSTITUTE_LIVE_ON_PERSONAL=True kiya ho (aur MODE=auto + --live bhi zaroori)
 CHANNEL_PROFILE = os.getenv("CHANNEL_PROFILE", "personal")
 # INSTITUTE_MODE: True = institute_info comments par knowledge se reply
 # False = unhe "skipped / institute_mode_off" save karo (default safe = False)
 INSTITUTE_MODE = os.getenv("INSTITUTE_MODE", "true").strip().lower() == "true"
+# INSTITUTE_LIVE_ON_PERSONAL: True = personal profile par bhi institute replies
+# LIVE post ho sakti hain — user ka MANUAL switch (.env me). Akela kafi nahi:
+# MODE=auto + --live dono bhi chahiye (check main.py + youtube.post_reply me).
+# Default False = purana safe rule (personal par institute reply hamesha draft).
+INSTITUTE_LIVE_ON_PERSONAL = (
+    os.getenv("INSTITUTE_LIVE_ON_PERSONAL", "false").strip().lower() == "true"
+)
 
 # --- Bot ki awaaz (voice) ---
 # CHANNEL_PROFILE se decide hota hai:
