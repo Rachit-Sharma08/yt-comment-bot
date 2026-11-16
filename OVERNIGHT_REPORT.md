@@ -46,28 +46,28 @@
 
 | # | Comment | Expected | Decision | Reply | Checks |
 |---|---|---|---|---|---|
-| 01 | CCC course ki fees kitni hai? | INSTITUTE | INSTITUTE (draft) | CCC course ki fee ₹6,000 hai. Poori detail: https://zedking.in/ccc-computer-course | PASS |
-| 02 | डिजिटल मार्केटिंग कोर्स की फीस कितनी है? | INSTITUTE | INSTITUTE (draft) | कौन साकोर्स जानना चाहते हैं? कुछलोकप्रियकोर्स: NIELIT O Level, NIELIT A Level, Office Automation, Accounting & Publishing. सभी कोर्स: https://zedking.in/courses | PASS |
-| 03 | What is the duration of the O Level course? | INSTITUTE | INSTITUTE (draft) | Is it NIELIT O Level or NIELIT A Level? Write the course name and its details are here. | PASS |
-| 04 | Address kya hai institute ka? | INSTITUTE | INSTITUTE (draft) | Hamara centre yahan hai: Kaithal - Pundri - Karnal Rd, near New Bus Stand, opp. Hanuman Vatika, Friends Colony, Kaithal, Haryana 136027. Hamara number: +91-9416111612. Admission form yahan: https://zedking.in/admission | PASS |
-| 05 | Admission kaise le? 10th pass hoon. | INSTITUTE | INSTITUTE (draft) | Centre yahan hai: Kaithal - Pundri - Karnal Rd, near New Bus Stand, opp. Hanuman Vatika, Friends Colony, Kaithal, Haryana 136027. Call: +91-9416111612. Admission: https://zedking.in/admission | PASS |
-| 06 | Digital marketing course ke baare me batao | INSTITUTE | INSTITUTE (draft) | Digital Marketing (DMA) course ki fee ₹15,000 hai, duration 6 Months. Full details yahan dekh sakte hain: https://zedking.in/digital-marketing-course | PASS |
-| 07 | Python course ki eligibility kya hai? | INSTITUTE | INSTITUTE (draft) | Kaunsa course jaanna chahte ho? Kuch popular courses: NIELIT O Level, NIELIT A Level, Office Automation, Accounting & Publishing. Sab courses: https://zedking.in/courses | PASS |
-| 08 | Bitcoin trading course karwana? | INSTITUTE | INSTITUTE (draft) | Hamari list me ye course nahi hai. Call karein: +91-9416111612. | PASS |
-| 09 | Tally Prime course kitne mahine ka hai? | INSTITUTE | INSTITUTE (draft) | Hamare Tally Prime course 3-6 Months ka course hai. Poori detail: https://zedking.in/tally-course | PASS |
-| 10 | फीस कितनी है? | INSTITUTE | INSTITUTE (draft) | कौन सेकोर्स के बारे में पूछ रहे हैं? लोकप्रिय कोर्स: NIELIT O Level, NIELIT A Level, Office Automation, Accounting & Publishing. सभी कोर्स देखें: https://zedking.in/courses | PASS |
+| 01 | CCC course ki fees kitni hai? | INSTITUTE | INSTITUTE (draft) | CCC course ki fee ₹6,000 hai. Full details yahan dekh sakte hain: https://zedking.in/ccc-computer-course | PASS |
+| 02 | डिजिटल मार्केटिंग कोर्स की फीस कितनी है? | INSTITUTE | INSTITUTE (draft) | कौन सा कोर्स जानना चाहते हैं? कुछ लोकप्रिय कोर्स: NIELIT O Level, NIELIT A Level, Office Automation, Accounting & Publishing. सभी कोर्स: https://zedking.in/courses | PASS |
+| 03 | What is the duration of the O Level course? | INSTITUTE | INSTITUTE (draft) | NIELIT O Level or NIELIT A Level, which one? Write the name, that's all. | PASS |
+| 04 | Address kya hai institute ka? | INSTITUTE | INSTITUTE (draft) | Hamara centre yahan hai: Kaithal - Pundri - Karnal Rd, near New Bus Stand, opp. Hanuman Vatika, Friends Colony, Kaithal, Haryana 136027. Call: +91-9416111612. Admission: https://zedking.in/admission | PASS |
+| 05 | Admission kaise le? 10th pass hoon. | INSTITUTE | INSTITUTE (draft) | Centre yahan hai: Kaithal - Pundri - Karnal Rd, near New Bus Stand, opp. Hanuman Vatika, Friends Colony, Kaithal, Haryana 136027. Hamara number: +91-9416111612. Admission form yahan: https://zedking.in/admission | PASS |
+| 06 | Digital marketing course ke baare me batao | INSTITUTE | INSTITUTE (draft) | Hamare Digital Marketing (DMA) course ki fee ₹15,000 hai aur duration 6 Months hai. Poori detail: https://zedking.in/digital-marketing-course | PASS |
+| 07 | Python course ki eligibility kya hai? | INSTITUTE | INSTITUTE (draft) | Kaun sa course chahiye? Popular: NIELIT O Level, NIELIT A Level, Office Automation, Accounting & Publishing. Sab courses dekh lo: https://zedking.in/courses | PASS |
+| 08 | Bitcoin trading course karwana? | INSTITUTE | INSTITUTE (draft) | Ye course hamari list me nahi hai abhi. Course list ke liye call karein: +91-9416111612. | PASS |
+| 09 | Tally Prime course kitne mahine ka hai? | INSTITUTE | INSTITUTE (draft) | Hamare Tally Prime course ki duration 3-6 Months hai. Full details yahan dekh sakte hain: https://zedking.in/tally-course | PASS |
+| 10 | फीस कितनी है? | INSTITUTE | INSTITUTE (draft) | कौन सा कोर्स पूछ रहे हैं? कुछ लोकप्रिय कोर्स: NIELIT O Level, NIELIT A Level, Office Automation, Accounting & Publishing. सभी कोर्स देखें: https://zedking.in/courses | PASS |
 | 11 | Bhai ye vlog kis camera se shoot kiya? | SKIP | SKIP (needs_owner) |  | — |
 | 12 | Which camera did you use? | SKIP | SKIP (needs_owner) |  | — |
 | 13 | यह वीडियो कहां शूट हुआ है? | SKIP | SKIP (needs_owner) |  | — |
 | 14 | Is video me konsa mic use kiya? | SKIP | SKIP (needs_owner) |  | — |
 | 15 | What editing software do you use? | SKIP | SKIP (needs_owner) |  | — |
-| 16 | Nice video bro | PRAISE | PRAISE | Thanks, that means a lot 🙏 | PASS |
-| 17 | Bahut achha video tha bhai | PRAISE | PRAISE | Bahut shukriya bhai ❤️ | PASS |
-| 18 | बहुत बढ़िया वीडियो | PRAISE | PRAISE | मज़ा आ गया, शुक्रिया 😊 | PASS |
-| 19 | Great job, keep it up | PRAISE | PRAISE | Appreciate it bro ❤️ | PASS |
-| 20 | Mast video yaar | PRAISE | PRAISE | Shukriya bhai, appreciate it ❤️ | PASS |
-| 21 | 🔥 | EMOJI | EMOJI | Nice one, thanks 🔥 | PASS |
-| 22 | 👍🏽 | EMOJI | EMOJI | Thank you so much 👍🏽 | PASS |
+| 16 | Nice video bro | PRAISE | PRAISE | Thanks a lot, keep it up! | PASS |
+| 17 | Bahut achha video tha bhai | PRAISE | PRAISE | Thanks bhai, dil khush kar diya | PASS |
+| 18 | बहुत बढ़िया वीडियो | PRAISE | PRAISE | प्यारा लगा, धन्यवाद 🙏 | PASS |
+| 19 | Great job, keep it up | PRAISE | PRAISE | Thanks a lot, really appreciate it 😊 | PASS |
+| 20 | Mast video yaar | PRAISE | PRAISE | Mast, thanks yaar 😄 | PASS |
+| 21 | 🔥 | EMOJI | EMOJI | Thank you so much 🔥 | PASS |
+| 22 | 👍🏽 | EMOJI | EMOJI | Thanks for the love 👍🏽 | PASS |
 | 23 | 😡👎 | SKIP | SKIP (negative_emoji) |  | — |
 | 24 | 👻 | SKIP | SKIP (unknown_emoji) |  | — |
 | 25 | Subscribe to my channel http://spam.xyz | SKIP | SKIP (contains_url_or_domain) |  | — |
@@ -83,7 +83,7 @@
 | 35 | आपकी उम्र क्या है? | SKIP | SKIP (personal_question) |  | — |
 | 36 |     | SKIP | SKIP (empty) |  | — |
 | 37 | ... | SKIP | SKIP (empty) |  | — |
-| 38 | Bhai ye video bahut achha tha, maine poora dekha aur bahut kuch seekh… | PRAISE | PRAISE | Thanks bhai, dil khush kar diya | PASS |
+| 38 | Bhai ye video bahut achha tha, maine poora dekha aur bahut kuch seekh… | PRAISE | PRAISE | Bahut shukriya bhai ❤️ | PASS |
 | 39 | Mera channel dekho https://youtube.com/@mine | SKIP | SKIP (contains_url_or_domain) |  | — |
 | 40 | Guide please | TRIGGER | TRIGGER | Here is the study guide: https://zedking.in/study - everything is in one place! | PASS |
 | 41 | Bot ho kya tum? | SKIP | SKIP (asks_if_bot) |  | — |

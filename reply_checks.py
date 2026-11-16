@@ -40,6 +40,56 @@ _COMMON = {
     "pass", "accha", "acha", "bahut", "bhai", "yaar", "kaise", "kya", "nahi",
 }
 
+# --- Devanagari glued word: "साकोर्स" = "सा"+"कोर्स" (do shabd bina space) ---
+# Dictionary = config ke templates ke saare Devanagari shabd (import par auto-build,
+# templates badle to dictionary apne aap update). Pronouns/短 function words bahar:
+# "आपके"/"इसमें" legit joined forms hain, warna false positive.
+_DEV_EXCLUDE = {"आप", "हम", "इस", "उस", "किस", "कर"}  # joined forms legit hain
+
+
+def _dev_words():
+    """Config ke Devanagari shabd (danda/। hata kar) — glued check ki dictionary."""
+    import types
+    parts = []
+
+    def walk(o):
+        if isinstance(o, types.ModuleType):
+            for k in dir(o):
+                if k.isupper():
+                    walk(getattr(o, k))
+        elif isinstance(o, dict):
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, (list, tuple)):
+            for v in o:
+                walk(v)
+        elif isinstance(o, str) and re.search(r"[ऀ-ॿ]", o):
+            parts.append(o)
+
+    walk(config)
+    joined = " ".join(parts).replace("।", " ")
+    return frozenset(w for w in re.findall(r"[ऀ-ॿ]+", joined)
+                     if w not in _DEV_EXCLUDE)
+
+
+_DEV_WORDS = _dev_words()
+
+
+def _dev_glued(tok):
+    """Token 2+ dictionary shabd me pura toota ho = glued (space bhool gaye)."""
+    if tok in _DEV_WORDS:
+        return False
+    n = len(tok)
+    # best[i] = token ke pehle i chars kitne dict shabd me toote (-1 = nahi toote)
+    best = [-1] * (n + 1)
+    best[0] = 0
+    for i in range(1, n + 1):
+        for j in range(i):
+            if best[j] >= 0 and tok[j:i] in _DEV_WORDS:
+                best[i] = max(best[i], best[j] + 1)
+    return best[n] >= 2
+
+
 # Internal words — public reply me kabhi nahi
 _INTERNAL_RE = re.compile(
     r"(?i)\b(?:chunks?|file|knowledge|database|context|prompt|models?|unknown)\b"
@@ -93,6 +143,11 @@ def _glued_hits(text):
             if low[:i] in _COMMON and low[i:] in _COMMON:
                 hits.append(tok)
                 break
+    # Devanagari: "साकोर्स" / "कुछलोकप्रियकोर्स" — 2+ dict shabd me juda token
+    clean = (text or "").replace("।", " ")  # danda = sentence end, space jaisa
+    for tok in re.findall(r"[ऀ-ॿ]+", clean):
+        if _dev_glued(tok):
+            hits.append(tok)
     return sorted(set(hits))
 
 

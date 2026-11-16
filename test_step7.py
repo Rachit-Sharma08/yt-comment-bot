@@ -135,6 +135,11 @@ def main():
             check(f"{case['id']} popular courses + URL",
                   courses_url in reply and any(n in reply for n in top3), reply)
             check(f"{case['id']} galat 'list me nahi'", "list me nahi" not in reply, reply)
+            if lang == "Devanagari Hindi":
+                # Glued fix ka regression check — dono phrases space ke saath
+                check(f"{case['id']} Devanagari spacing",
+                      "कौन सा कोर्स" in reply and "कुछ लोकप्रिय कोर्स" in reply,
+                      reply)
 
         elif kind == "not_in_list":
             check(f"{case['id']} 'list me ... nahi' (Bitcoin = sach)",
@@ -194,11 +199,15 @@ def main():
         "## Checks (spec Step 7)",
         "",
         "- Fee replies me sahi phrasing (ki fee / fee is / की फीस): " + _yn(fee_ok),
-        "- Kisi reply me ASCII ' - ' dash ya 'wale' nahi: " + _yn(dash_ok),
+        "- Kisi reply me 'wale' nahi; template ka ASCII ' - ' dash nahi "
+        "(address ka ' - ' = file ka data, wo alag): " + _yn(dash_ok),
         "- Reply language comment ki language jaisi: " + _yn(lang_ok),
         "- Address me 'India' nahi: " + _yn(india_ok),
         "- institute_name sahi (naam + city): " + _yn(name_ok),
         "- Jahan matching course hai wahan galat 'list me nahi' nahi: " + _yn(nolist_ok),
+        "- Devanagari reply me glued shabd nahi (checker Devanagari bhi pakadta hai): "
+        + _yn(all(ok for n, ok, _ in checks if "Devanagari spacing" in n
+                  or "reply checks" in n)),
         "",
         f"**Result:** {passed}/{len(checks)} checks PASS.",
         "",
@@ -209,6 +218,12 @@ def main():
         "bot clarification deta hai, fee value guess NAHI karta (policy rule).",
         "- `Bitcoin trading course karwana?` = hamari list me sach me nahi — "
         "wahan sirf wahi 'list me nahi' sahi hai.",
+        "- **' - ' check ka sach:** reply me address FILE ka exact hai "
+        "(`zedking_info.md` contact page: `Kaithal - Pundri - Karnal Rd, ...` — "
+        "usme ASCII ' - ' hai, template se nahi). Test me `wo_addr = reply.replace"
+        "(address, \"\")` karke sirf template wale hisse par check lagta hai, "
+        "isliye address ka ' - ' count nahi hota. `reply_checks._DASH_RE` sirf "
+        "em/en dash (— –) pakadta hai — ASCII ' - ' par wo lagta hi nahi.",
     ]
     with open("REPORT_3.md", "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")
