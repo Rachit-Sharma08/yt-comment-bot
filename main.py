@@ -277,9 +277,14 @@ def run(live=False):
 
         # --- 6) Save karo: auto = YouTube par post, draft = sirf db ---
         # (emoji + trigger + llm + institute — sab ka reply yahin se hokar jaata hai)
-        # SAFETY: institute replies sirf CHANNEL_PROFILE="zedking" par live post hongi,
-        # warna (personal profile par) hamesha draft me hi save hongi
-        force_draft = source == "institute" and config.CHANNEL_PROFILE != "zedking"
+        # SAFETY: institute reply LIVE tabhi jab (profile zedking) YA (user ne
+        # khud INSTITUTE_LIVE_ON_PERSONAL=True kiya ho). Akela kafi nahi —
+        # MODE=auto (niche if) + --live (youtube.post_reply ka fail-safe) dono
+        # bhi chahiye. Warna institute reply hamesha draft me save hogi.
+        institute_live_ok = config.CHANNEL_PROFILE == "zedking" or (
+            config.INSTITUTE_LIVE_ON_PERSONAL and live
+        )
+        force_draft = source == "institute" and not institute_live_ok
         if config.MODE == "auto" and not force_draft:
             # --live (live mode) = zyada strict limit, warna normal per-run limit
             limit = config.MAX_REPLIES_PER_RUN_LIVE if live else config.MAX_REPLIES_PER_RUN
