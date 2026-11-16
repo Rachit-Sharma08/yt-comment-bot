@@ -73,23 +73,32 @@ def course_reply(language, record, fields):
     """Course field ka reply — sirf template + file ke values (LLM nahi).
 
     record: knowledge.course_records() ka ek record
-    fields: ["fee", "duration", ...] — ek se zyada field ek hi reply me
+    fields: ["fee", "duration", ...]
+      - fee+duration (default) -> combined template (3 variants/lang)
+      - sirf 1 field -> us field ka full-sentence template (2 variants/lang)
+      - aur koi combo -> har field ki sentence, space se join
 
     Koi field missing (None/UNKNOWN) ho to None — caller unknown template de.
     """
-    parts = []
+    name = record["short_name"]
     for field in fields:
-        value = record.get(field)
-        if not value:
+        if not record.get(field):
             return None  # file me ye field nahi — answer mat bana
-        phrases = (config.COURSE_FIELD_PHRASES.get(field, {}).get(language)
-                   or config.COURSE_FIELD_PHRASES[field][FALLBACK_LANG])
-        parts.append(_pick_recent(f"field_{field}", phrases).format(value=value))
-    facts = config.COURSE_CONNECTORS[language].join(parts)
-    sentences = (config.COURSE_SENTENCE_TEMPLATES.get(language)
-                 or config.COURSE_SENTENCE_TEMPLATES[FALLBACK_LANG])
-    reply = _pick_recent("course_sentence", sentences).format(
-        name=record["short_name"], facts=facts)
+
+    def _field_sentence(field):
+        tpls = (config.COURSE_FIELD_TEMPLATES.get(field, {}).get(language)
+                or config.COURSE_FIELD_TEMPLATES[field][FALLBACK_LANG])
+        return _pick_recent(f"field_{field}", tpls).format(
+            name=name, value=record[field])
+
+    if set(fields) == {"fee", "duration"}:
+        tpls = (config.COURSE_COMBINED_TEMPLATES.get(language)
+                or config.COURSE_COMBINED_TEMPLATES[FALLBACK_LANG])
+        reply = _pick_recent("course_combined", tpls).format(
+            name=name, fee=record["fee"], duration=record["duration"])
+    else:
+        # 1 field = uski sentence; zyada = sentences space se join
+        reply = " ".join(_field_sentence(f) for f in fields)
     return re.sub(r"\s{2,}", " ", reply).strip()
 
 

@@ -251,19 +251,19 @@ COURSE_STOPWORDS = [
 INSTITUTE_TEMPLATES = {
     "clarify": {
         "Roman Hinglish": [
-            "Kaun sa course chahiye - {A} ya {B}? Course ka naam likh do.",
+            "Kaun sa course chahiye: {A} ya {B}? Course ka naam likh do.",
             "Aap {A} ki baat kar rahe ho ya {B} ki? Naam likh do, uski detail yahi hai.",
-            "{A} ya {B} - kaun sa course chahiye? Ek naam likh do bas.",
+            "{A} ya {B}, kaun sa course chahiye? Ek naam likh do bas.",
         ],
         "English": [
-            "Which course do you mean - {A} or {B}? Just write the course name.",
+            "Which course do you mean: {A} or {B}? Just write the course name.",
             "Is it {A} or {B}? Write the course name and its details are here.",
-            "{A} or {B} - which one? Write the name, that's all.",
+            "{A} or {B}, which one? Write the name, that's all.",
         ],
         "Devanagari Hindi": [
-            "कौन सा कोर्स चाहिए - {A} या {B}? कोर्स का नाम लिख दीजिए।",
+            "कौन सा कोर्स चाहिए: {A} या {B}? कोर्स का नाम लिख दीजिए।",
             "आप {A} की बात कर रहे हैं या {B} की? नाम लिख दीजिए, उसकी जानकारी यहीं है।",
-            "{A} या {B} - कौन सा कोर्स? बस नाम लिख दीजिए।",
+            "{A} या {B}, कौन सा कोर्स? बस नाम लिख दीजिए।",
         ],
     },
     "unknown": {
@@ -286,17 +286,17 @@ INSTITUTE_TEMPLATES = {
     "no_course": {
         "Roman Hinglish": [
             "Kaun sa course jaanna hai? Course ka naam likh do.",
-            "Course ka naam likh do - list me se koi bhi ek.",
+            "Course ka naam likh do, list me se koi bhi ek.",
             "Kis course ki baat ho rahi hai? Naam likh do bas.",
         ],
         "English": [
             "Which course are you asking about? Write the course name.",
-            "Write the course name - any one from our list.",
+            "Write the course name, any one from our list.",
             "Which course do you mean? Just write the name.",
         ],
         "Devanagari Hindi": [
             "किस कोर्स के बारे में पूछ रहे हैं? कोर्स का नाम लिख दीजिए।",
-            "कोर्स का नाम लिख दीजिए - हमारी लिस्ट में से कोई भी एक।",
+            "कोर्स का नाम लिख दीजिए, हमारी लिस्ट में से कोई भी एक।",
             "किस कोर्स की बात हो रही है? नाम लिख दीजिए।",
         ],
     },
@@ -319,61 +319,100 @@ INSTITUTE_TEMPLATES = {
     },
 }
 
-# --- Step 3 (naya): course field ke reply — sirf TEMPLATE, values file se hubahu ---
-# Sentence = prefix + field fragments (ek se zyada field ek hi reply me) [+ link line].
-# {name} = course short_name, {facts} = field fragments joined, {value} = file ka value
-COURSE_SENTENCE_TEMPLATES = {
+# --- Step 2 (rewrite): course field ke reply — sirf TEMPLATE, values file se hubahu ---
+# Combined (fee + duration = default reply) — 3 variants x 3 languages
+# {name} = course short_name, {fee}/{duration} = file ka value hubahu
+COURSE_COMBINED_TEMPLATES = {
     "Roman Hinglish": [
-        "Hamare {name} course {facts}.",
-        "Hamare {name} wale course {facts}.",
-        "Hamare {name} course - {facts}.",
+        "Hamare {name} course ki fee {fee} hai, duration {duration}.",
+        "Hamare {name} course ki fee {fee} hai aur duration {duration} hai.",
+        "{name} course ki fee {fee} hai, duration {duration}.",
     ],
     "English": [
-        "Our {name} course {facts}.",
-        "In our {name} course {facts}.",
-        "Our {name} course - {facts}.",
+        "Our {name} course fee is {fee}, duration {duration}.",
+        "Our {name} course fee is {fee} and duration is {duration}.",
+        "The {name} course fee is {fee}, duration {duration}.",
     ],
     "Devanagari Hindi": [
-        "हमारे {name} कोर्स {facts}।",
-        "हमारे {name} वाले कोर्स {facts}।",
-        "हमारे {name} कोर्स - {facts}।",
+        "हमारे {name} कोर्स की फीस {fee} है, अवधि {duration}।",
+        "हमारे {name} कोर्स की फीस {fee} और अवधि {duration} है।",
+        "{name} कोर्स की फीस {fee} है, अवधि {duration}।",
     ],
 }
 
-# {value} = file se hubahu value (fee/duration/eligibility/mode/certificate)
-COURSE_FIELD_PHRASES = {
+# Sirf EK field poochi ho — full-sentence template (2 variants x field x language)
+# {name} = short_name, {value} = file ka value. "wale" aur " - " kabhi nahi.
+COURSE_FIELD_TEMPLATES = {
     "fee": {
-        "Roman Hinglish": ["fee {value} hai", "fees {value} hai", "fee {value} lagti hai"],
-        "English": ["fee is {value}", "fee comes to {value}", "fee is {value}"],
-        "Devanagari Hindi": ["की फीस {value} है", "का शुल्क {value} है", "की फीस {value} रहती है"],
+        "Roman Hinglish": [
+            "Hamare {name} course ki fee {value} hai.",
+            "{name} course ki fee {value} hai.",
+        ],
+        "English": [
+            "Our {name} course fee is {value}.",
+            "The {name} course fee is {value}.",
+        ],
+        "Devanagari Hindi": [
+            "हमारे {name} कोर्स की फीस {value} है।",
+            "{name} कोर्स की फीस {value} है।",
+        ],
     },
     "duration": {
-        "Roman Hinglish": ["duration {value} hai", "duration {value} rakhi hai", "ye {value} ka course hai"],
-        "English": ["duration is {value}", "it runs for {value}", "duration is {value}"],
-        "Devanagari Hindi": ["की अवधि {value} है", "का दौर {value} रहता है", "की अवधि {value} रहती है"],
+        "Roman Hinglish": [
+            "Hamare {name} course {value} ka course hai.",
+            "Hamare {name} course ki duration {value} hai.",
+        ],
+        "English": [
+            "Our {name} course runs for {value}.",
+            "Our {name} course duration is {value}.",
+        ],
+        "Devanagari Hindi": [
+            "हमारे {name} कोर्स की अवधि {value} है।",
+            "{name} कोर्स {value} का कोर्स है।",
+        ],
     },
     "eligibility": {
-        "Roman Hinglish": ["eligibility {value} chahiye", "eligibility {value} honi chahiye", "eligibility {value} wali baat hai"],
-        "English": ["eligibility needs {value}", "you need {value}", "eligibility needs {value}"],
-        "Devanagari Hindi": ["के लिए {value} चाहिए", "में {value} पात्र हैं", "के लिए {value} होना चाहिए"],
+        "Roman Hinglish": [
+            "Hamare {name} course ke liye {value} chahiye.",
+            "{name} course ki eligibility {value} hai.",
+        ],
+        "English": [
+            "Our {name} course needs {value}.",
+            "Our {name} course requires {value}.",
+        ],
+        "Devanagari Hindi": [
+            "हमारे {name} कोर्स के लिए {value} चाहिए।",
+            "{name} कोर्स की पात्रता {value} है।",
+        ],
     },
     "mode": {
-        "Roman Hinglish": ["{value} mode me hai", "{value} chalata hai", "{value} me hota hai"],
-        "English": ["it runs {value}", "it is available {value}", "mode is {value}"],
-        "Devanagari Hindi": ["{value} चलता है", "{value} में चलता है", "{value} मोड है"],
+        "Roman Hinglish": [
+            "Hamare {name} course {value} mode me hai.",
+            "{name} course {value} me chalta hai.",
+        ],
+        "English": [
+            "Our {name} course is available {value}.",
+            "Our {name} course runs {value}.",
+        ],
+        "Devanagari Hindi": [
+            "हमारे {name} कोर्स {value} मोड में है।",
+            "{name} कोर्स {value} में चलता है।",
+        ],
     },
     "certificate": {
-        "Roman Hinglish": ["certificate {value} milta hai", "{value} certificate milta hai", "certificate {value} deta hai"],
-        "English": ["certificate {value} is given", "you get {value}", "certificate {value}"],
-        "Devanagari Hindi": ["में {value} मिलता है", "के बाद {value} मिलता है", "में certificate {value} है"],
+        "Roman Hinglish": [
+            "Hamare {name} course ka certificate {value} milta hai.",
+            "{name} course ke baad {value} certificate milta hai.",
+        ],
+        "English": [
+            "Our {name} course gives {value} certificate.",
+            "You get {value} certificate from our {name} course.",
+        ],
+        "Devanagari Hindi": [
+            "हमारे {name} कोर्स का {value} सर्टिफिकेट मिलता है।",
+            "{name} कोर्स के बाद {value} सर्टिफिकेट मिलता है।",
+        ],
     },
-}
-
-# Ek se zyada field jodne ke liye beech ka connector
-COURSE_CONNECTORS = {
-    "Roman Hinglish": " aur ",
-    "English": " and ",
-    "Devanagari Hindi": " और ",
 }
 
 # Course matching ke liye stopwords (course name ka token na maana jaye)
@@ -417,16 +456,16 @@ MAX_INSTITUTE_REPLY_CHARS = 280
 # Course link suffix templates (3 languages x 2 variants) — {url} = course chunk ka source URL
 COURSE_LINK_TEMPLATES = {
     "Roman Hinglish": [
+        "Poori detail: {url}",
         "Full details yahan dekh sakte hain: {url}",
-        "Poori detail yahan dekhein: {url}",
     ],
     "English": [
+        "Full details: {url}",
         "You can see full details here: {url}",
-        "Check full details here: {url}",
     ],
     "Devanagari Hindi": [
+        "पूरी जानकारी: {url}",
         "पूरी जानकारी यहाँ देख सकते हैं: {url}",
-        "सभी डिटेल्स यहाँ देखें: {url}",
     ],
 }
 
