@@ -311,8 +311,8 @@ INSTITUTE_TEMPLATES = {
             "Which course are you asking about? Popular ones: {A}, {B}, {C}. See all courses: {courses_page_url}",
         ],
         "Devanagari Hindi": [
-            "कौन साकोर्स जानना चाहते हैं? कुछलोकप्रियकोर्स: {A}, {B}, {C}. सभी कोर्स: {courses_page_url}",
-            "कौन सेकोर्स के बारे में पूछ रहे हैं? लोकप्रिय कोर्स: {A}, {B}, {C}. सभी कोर्स देखें: {courses_page_url}",
+            "कौन सा कोर्स जानना चाहते हैं? कुछ लोकप्रिय कोर्स: {A}, {B}, {C}. सभी कोर्स: {courses_page_url}",
+            "कौन सा कोर्स पूछ रहे हैं? कुछ लोकप्रिय कोर्स: {A}, {B}, {C}. सभी कोर्स देखें: {courses_page_url}",
         ],
     },
     "not_in_list": {
