@@ -142,8 +142,12 @@ def _contact_field(label):
 
 
 def contact_address():
-    """Contact chunk ka address (Step 4 — address intent reply ke liye)."""
-    return _contact_field("Address")
+    """Contact chunk ka address (Step 4 — address intent reply ke liye).
+
+    Aakhri ", India" hata kar — reply chhota aur spec jaisa (Step 3).
+    """
+    addr = _contact_field("Address")
+    return re.sub(r",\s*India\s*$", "", addr).strip()
 
 
 def admission_url():

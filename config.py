@@ -430,24 +430,25 @@ COURSE_MATCH_STOPWORDS = COURSE_STOPWORDS + [
 LINK_IN_COURSE_REPLIES = True
 MAX_LINK_REPLIES_PER_DAY = 15
 
-# --- Step 4: contact/address/admission intent wale reply ---
-# {phone} = institute ka main number, {address} = file ka address, {url} = admission page
-# Har part alag — jo allowed hai (cap ke hisaab se) wahi lagao
+# --- Step 3 (rewrite): contact/address/admission intent wala reply ---
+# {phone} = institute ka main number, {address} = file ka address (", India" ke bina),
+# {url} = admission page. Order: address -> phone -> link (spec).
+# Hinglish/Hindi me English phrases ("Our address"/"Call us"/"We're at") NAHI.
 CONTACT_REPLY_PARTS = {
     "Roman Hinglish": {
-        "phone": ["Call karein: {phone}.", "Hamara number: {phone}.", "Call karo: {phone}."],
-        "address": ["Pata: {address}.", "Hamara address: {address}.", "Address yahan hai: {address}."],
-        "link": ["Admission yahan: {url}", "Admission form yahan: {url}", "Dakhila yahan: {url}"],
+        "address": ["Hamara centre yahan hai: {address}.", "Centre yahan hai: {address}."],
+        "phone": ["Call: {phone}.", "Hamara number: {phone}."],
+        "link": ["Admission: {url}", "Admission form yahan: {url}"],
     },
     "English": {
-        "phone": ["Call us: {phone}.", "Phone: {phone}.", "Our number: {phone}."],
-        "address": ["Address: {address}.", "Our address: {address}.", "We're at: {address}."],
-        "link": ["Admission: {url}", "Admission form here: {url}", "Apply here: {url}"],
+        "address": ["Our centre is at {address}.", "The centre is at {address}."],
+        "phone": ["Call: {phone}.", "Call us: {phone}."],
+        "link": ["Admission: {url}", "Apply here: {url}"],
     },
     "Devanagari Hindi": {
-        "phone": ["कॉल करें: {phone}।", "फोन: {phone}।", "हमारा नंबर: {phone}।"],
-        "address": ["पता: {address}।", "हमारा पता: {address}।", "हम यहाँ हैं: {address}।"],
-        "link": ["दाखिला: {url}", "दाखिला फॉर्म यहाँ: {url}", "यहाँ अप्लाई करें: {url}"],
+        "address": ["हमारा सेंटर यहाँ है: {address}।", "सेंटर यहाँ है: {address}।"],
+        "phone": ["कॉल: {phone}।", "फोन: {phone}।"],
+        "link": ["एडमिशन: {url}", "एडमिशन फॉर्म यहाँ: {url}"],
     },
 }
 

@@ -669,6 +669,7 @@ _CONTACT_INTENT_WORDS = [
     "address", "kahan", "kaha", "location", "where", "admission", "join",
     "enroll", "dakhila", "apply", "contact", "phone", "mobile", "whatsapp",
     "website", "संपर्क", "नंबर", "फोन", "कहाँ", "प्रवेश", "दाखिला", "एडमिशन",
+    "पता",  # Hindi "address" — "सेंटर का पता क्या है?" ko contact par le jaye
 ]
 _CONTACT_INTENT_RE = re.compile(
     r"(?i)(?<![a-z0-9])(" + "|".join(

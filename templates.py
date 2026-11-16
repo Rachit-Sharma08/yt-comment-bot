@@ -133,10 +133,11 @@ def contact_reply(language, phone, address, url, with_phone=True, with_link=True
     """
     parts = config.CONTACT_REPLY_PARTS.get(language) or config.CONTACT_REPLY_PARTS[FALLBACK_LANG]
     out = []
-    if with_phone and phone:
-        out.append(_pick_recent("contact_phone", parts["phone"]).format(phone=phone))
+    # Order: address -> phone -> link (spec Step 3)
     if with_address and address:
         out.append(_pick_recent("contact_address", parts["address"]).format(address=address))
+    if with_phone and phone:
+        out.append(_pick_recent("contact_phone", parts["phone"]).format(phone=phone))
     if with_link and url:
         out.append(_pick_recent("contact_link", parts["link"]).format(url=url))
     return " ".join(out)
