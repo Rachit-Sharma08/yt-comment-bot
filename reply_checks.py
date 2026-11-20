@@ -40,6 +40,69 @@ _COMMON = {
     "pass", "accha", "acha", "bahut", "bhai", "yaar", "kaise", "kya", "nahi",
 }
 
+# Legit Roman/English compound-ish shabd jo 2 dictionary shabd me toot sakte
+# hain lekin glued nahi hain (false positive rokne ke liye).
+_EN_GLUED_OK = {
+    "youtube", "whatsapp", "linkedin", "powerpoint", "github",
+    "javascript", "typescript", "chatgpt", "openai", "zedking",
+    "iphone", "ipad", "ios", "mp3", "mp4", "3d", "4k", "5g",
+    "b2b", "b2c",
+}
+
+# Roman Hinglish + English ke templates se auto-built dictionary — Devanagari
+# wale _dev_words() jaisa hi, taaki "aurduration", "haiaur", "ki feeRs" jaise
+# chipke shabd pakde jayein aur "duration"/"eligibility" jaise sahi shabd par
+# false positive na aaye.
+_EN_WORDS = None  # pehle call par build hoga
+
+
+def _en_words():
+    """Config ke Roman Hinglish / English template shabd — glued check ki dictionary."""
+    global _EN_WORDS
+    if _EN_WORDS is not None:
+        return _EN_WORDS
+    import types
+    parts = []
+
+    def walk(o):
+        if isinstance(o, types.ModuleType):
+            for k in dir(o):
+                if k.isupper():
+                    walk(getattr(o, k))
+        elif isinstance(o, dict):
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, (list, tuple)):
+            for v in o:
+                walk(v)
+        elif isinstance(o, str):
+            parts.append(o)
+
+    walk(config)
+    joined = " ".join(parts)
+    _EN_WORDS = frozenset(w for w in re.findall(r"[a-z]{2,}", joined.lower()))
+    return _EN_WORDS
+
+
+def _en_glued(tok):
+    """Token 2+ dictionary shabd me pura toota ho = glued (space bhool gaye)."""
+    low = tok.lower()
+    if low in _EN_GLUED_OK:
+        return False
+    if low in _en_words():
+        return False  # ek hi jaana shabd — glued nahi
+    n = len(low)
+    if n < 4:  # chhote token me 2 meaningful shabd ka judam nahi ho sakta
+        return False
+    best = [-1] * (n + 1)
+    best[0] = 0
+    for i in range(1, n + 1):
+        for j in range(i):
+            if best[j] >= 0 and low[j:i] in _en_words():
+                best[i] = max(best[i], best[j] + 1)
+    return best[n] >= 2
+
+
 # --- Devanagari glued word: "साकोर्स" = "सा"+"कोर्स" (do shabd bina space) ---
 # Dictionary = config ke templates ke saare Devanagari shabd (import par auto-build,
 # templates badle to dictionary apne aap update). Pronouns/短 function words bahar:
@@ -143,6 +206,14 @@ def _glued_hits(text):
             if low[:i] in _COMMON and low[i:] in _COMMON:
                 hits.append(tok)
                 break
+    # Roman Hinglish / English glued shabd (aurduration, haiaur, ki feeRs) —
+    # auto-dictionary se word-break check (short tokens bhi pakde jate hain).
+    for tok in re.findall(r"[A-Za-z]{4,}", text or ""):
+        low = tok.lower()
+        if low in _GLUED_OK:
+            continue
+        if _en_glued(tok):
+            hits.append(tok)
     # Devanagari: "साकोर्स" / "कुछलोकप्रियकोर्स" — 2+ dict shabd me juda token
     clean = (text or "").replace("।", " ")  # danda = sentence end, space jaisa
     for tok in re.findall(r"[ऀ-ॿ]+", clean):

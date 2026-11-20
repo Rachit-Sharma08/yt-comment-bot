@@ -1,6 +1,6 @@
 # REPORT_2 — Institute v2 + voice/facts test (Step 5)
 
-- Date: 2026-11-16 19:40
+- Date: 2026-11-20 10:45
 - Real knowledge file (`knowledge/zedking_info.md`) se values — koi hardcode value nahi.
 - YouTube API call **0**, POST **0**. LLM sirf classification ke liye hoti hai — test me band hai (offline + deterministic).
 - Har reply par automatic checks: markdown, glued word, internal word, promise (vaada), AI-jaisa phrase, em dash, third-person 'ZedKing ke ...', link count/domain, 280 char, comment ki language.
@@ -9,20 +9,20 @@
 
 | ID | Comment | Label | Reply | Checks |
 |---|---|---|---|---|
-| v2-01 | CCC course ki fees kitni hai? | institute_info | CCC course ki fee ₹6,000 hai. Full details yahan dekh sakte hain: https://zedking.in/ccc-computer-course | PASS |
-| v2-02 | CCC course ki fees aur duration kitni hai? | institute_info | Hamare CCC course ki fee ₹6,000 hai aur duration 3 Months hai. Poori detail: https://zedking.in/ccc-computer-course | PASS |
+| v2-01 | CCC course ki fees kitni hai? | institute_info | Hamare CCC course ki fee ₹6,000 hai. Poori detail: https://zedking.in/ccc-computer-course | PASS |
+| v2-02 | CCC course ki fees aur duration kitni hai? | institute_info | Hamare CCC course ki fee ₹6,000 hai, duration 3 Months. Full details yahan dekh sakte hain: https://zedking.in/ccc-computer-course | PASS |
 | v2-03 | Python course ki eligibility kya hai? | institute_info | Kaunsa course jaanna chahte ho? Kuch popular courses: NIELIT O Level, NIELIT A Level, Office Automation, Accounting & Publishing. Sab courses: https://zedking.in/courses | PASS |
-| v2-04 | Tally course kitne mahine ka hai? | institute_info | Aap CCBA Accounting ki baat kar rahe ho ya Financial Accounting ki? Naam likh do, uski detail yahi hai. | PASS |
+| v2-04 | Tally course kitne mahine ka hai? | institute_info | Kaun sa course chahiye: CCBA Accounting ya Financial Accounting? Course ka naam likh do. | PASS |
 | v2-05 | digital marketing ki fees | institute_info | Kaun sa course chahiye? Popular: NIELIT O Level, NIELIT A Level, Office Automation, Accounting & Publishing. Sab courses dekh lo: https://zedking.in/courses | PASS |
-| v2-06 | AI Digital Pro ki fees kitni hai? | institute_info | Hamare AI Digital Pro course ki fee ₹35,000 hai. Poori detail: https://zedking.in/ai-digital-pro-course | PASS |
-| v2-07 | Bitcoin trading course karwana? | institute_info | Ye course abhi hamari list me nahi hai. Available courses ke liye call karein: +91-9416111612. | PASS |
+| v2-06 | AI Digital Pro ki fees kitni hai? | institute_info | AI Digital Pro course ki fee ₹35,000 hai. Full details yahan dekh sakte hain: https://zedking.in/ai-digital-pro-course | PASS |
+| v2-07 | Bitcoin trading course karwana? | institute_info | Ye course hamari list me nahi hai abhi. Course list ke liye call karein: +91-9416111612. | PASS |
 | v2-08 | Fire safety course ki eligibility? | institute_info | Is baare me abhi confirm nahi hai humare paas. Call karein: +91-9416111612. | PASS |
-| v2-09 | Address kya hai institute ka? | institute_info | Centre yahan hai: Kaithal - Pundri - Karnal Rd, near New Bus Stand, opp. Hanuman Vatika, Friends Colony, Kaithal, Haryana 136027. Call: +91-9416111612. Admission form yahan: https://zedking.in/admission | PASS |
-| v2-10 | admission kaise le | institute_info | Hamara centre yahan hai: Kaithal - Pundri - Karnal Rd, near New Bus Stand, opp. Hanuman Vatika, Friends Colony, Kaithal, Haryana 136027. Hamara number: +91-9416111612. Admission: https://zedking.in/admission | PASS |
+| v2-09 | Address kya hai institute ka? | institute_info | Hamara centre yahan hai: Kaithal - Pundri - Karnal Rd, near New Bus Stand, opp. Hanuman Vatika, Friends Colony, Kaithal, Haryana 136027. Call: +91-9416111612. Admission: https://zedking.in/admission | PASS |
+| v2-10 | admission kaise le | institute_info | Centre yahan hai: Kaithal - Pundri - Karnal Rd, near New Bus Stand, opp. Hanuman Vatika, Friends Colony, Kaithal, Haryana 136027. Hamara number: +91-9416111612. Admission form yahan: https://zedking.in/admission | PASS |
 | v2-11 | फीस कितनी है? | institute_info | कौन सा कोर्स पूछ रहे हैं? कुछ लोकप्रिय कोर्स: NIELIT O Level, NIELIT A Level, Office Automation, Accounting & Publishing. सभी कोर्स देखें: https://zedking.in/courses | PASS |
-| v2-12 | What is the duration of CCC? | institute_info | Our CCC course duration is 3 Months. Full details: https://zedking.in/ccc-computer-course | PASS |
+| v2-12 | What is the duration of CCC? | institute_info | Our CCC course duration is 3 Months. You can see full details here: https://zedking.in/ccc-computer-course | PASS |
 | v2-13 | Which camera did you use? | video_question | (no reply) | PASS |
-| v2-14 | Nice video bro | praise | Appreciate it bro ❤️ | PASS |
+| v2-14 | Nice video bro | praise | Thanks a lot, really appreciate it 😊 | PASS |
 | v2-15 | Bot ho kya? | asks_if_bot | (no reply) | PASS |
 | v2-16 | Aap kahan rehte ho? | personal_question | (no reply) | PASS |
 

@@ -416,6 +416,37 @@ _FIELD_TERMS = {
                     "प्रमाणपत्र", "सर्टिफिकेट"],
 }
 
+# "kitni/kitna" (kitna/multi) = generic matra shabd, field ka NAAM nahi.
+# Inko alag field jodne ke liye mat gino — varna "duration kitni hai?"
+# me "kitni" fee bhi jod degi aur reply me fee + duration dono aa jayenge.
+_GENERIC_QTY = {"kitni", "kitna", "kitne", "कितनी", "कितना", "कितने"}
+
+
+def _asked_fields(comment):
+    """Comment me pucha gaya field (fee/duration/eligibility/mode/certificate).
+
+    Generic "kitni/kitna" field ka naam nahi hai — agar comment me koi
+    explicit field-naam (fee/duration/...) hai to sirf wahi return hota hai,
+    taaki "sirf duration pucha" par fee na jode aur "sirf fee pucha" par
+    duration na jode. Dono explicit hon tabhi dono jode jate hain.
+    """
+    low = (comment or "").lower()
+    found = []
+    for f in _COURSE_FACT_FIELDS:
+        for t in _FIELD_TERMS[f]:
+            tl = t.lower()
+            if tl in _GENERIC_QTY:
+                continue
+            if tl in low:
+                found.append(f)
+                break
+    if found:
+        return found
+    # Koi field-naam nahi — sirf generic "kitni" ya kuch nahi
+    if any(t in low for t in _GENERIC_QTY):
+        return ["fee"]  # "kitni" = kitni fee
+    return ["fee", "duration"]  # default: dono
+
 
 def _facts_from_reply(reply):
     """Reply se saare facts nikalo: urls, phones (digit runs), numbers/fees, address words."""
@@ -538,13 +569,6 @@ def _link_allowed():
 
 
 # ===== Course matching (rule-based pehle, LLM sirf fallback me) =====
-
-def _asked_fields(comment):
-    """Comment me pucha gaya field (fee/duration/eligibility/mode/certificate)."""
-    low = (comment or "").lower()
-    return [f for f in _COURSE_FACT_FIELDS
-            if any(t.lower() in low for t in _FIELD_TERMS[f])]
-
 
 def _course_core(name):
     """Course record ke naam se core (chhota) — 'CCC' / 'digital marketing course'.

@@ -152,6 +152,25 @@ def main():
     check("kisi reply me 'wale' nahi", not any("wale" in r.lower() for r in all_replies))
     check("kisi reply me 'India' nahi", not any("India" in r for r in all_replies))
 
+    # --- Roman Hinglish / English glued-word unit checks (Step 14) ---
+    for w in ("aurduration", "haiaur", "kifees"):
+        f, _ = reply_checks.check_reply("x", w, "Roman Hinglish")
+        check(f"glued word pakda: {w}", "glued_word" in f, str(f))
+    for w in ("duration", "eligibility", "certificate", "admission"):
+        f, _ = reply_checks.check_reply("x", w, "Roman Hinglish")
+        check(f"glued false-positive nahi: {w}", "glued_word" not in f, str(f))
+
+    # --- Step 4: sirf ek field puchhe to doosri na jode ---
+    check("sirf duration puchhe -> sirf duration",
+          ai._asked_fields("Digital marketing course ki duration kitni hai?") == ["duration"],
+          str(ai._asked_fields("Digital marketing course ki duration kitni hai?")))
+    check("sirf fee puchhe -> sirf fee",
+          ai._asked_fields("CCC course ki fees kitni hai?") == ["fee"],
+          str(ai._asked_fields("CCC course ki fees kitni hai?")))
+    check("dono puchhe -> dono",
+          ai._asked_fields("CCC course ki fees aur duration kitna hai?") == ["fee", "duration"],
+          str(ai._asked_fields("CCC course ki fees aur duration kitna hai?")))
+
     passed = sum(1 for _, ok, _ in checks if ok)
     print(f"\nStep 7: {passed}/{len(checks)} CHECKS PASS")
 

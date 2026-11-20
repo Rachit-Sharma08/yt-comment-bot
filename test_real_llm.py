@@ -173,10 +173,26 @@ def _write_skip(reason):
 
 
 def main():
+    # --- Roman Hinglish / English glued-word unit checks (Step 14) ---
+    # API keys ki zarurat NAHI — ye hamesha chalte hain (SKIP bhi ho).
+    glue_bad = ["aurduration", "haiaur", "kifees"]
+    glue_good = ["duration", "eligibility", "certificate", "admission"]
+    glue_fail = 0
+    for w in glue_bad:
+        fails, _ = reply_checks.check_reply("x", w, "Roman Hinglish")
+        ok = "glued_word" in fails
+        glue_fail += not ok
+        print(f"{'PASS' if ok else 'FAIL'}: glued unit '{w}' pakda (expect FAIL)")
+    for w in glue_good:
+        fails, _ = reply_checks.check_reply("x", w, "Roman Hinglish")
+        ok = "glued_word" not in fails
+        glue_fail += not ok
+        print(f"{'PASS' if ok else 'FAIL'}: glued false-positive '{w}' nahi (expect PASS)")
+
     if not config.GROQ_API_KEY and not config.GEMINI_API_KEY:
         print("SKIP: .env me GROQ_API_KEY / GEMINI_API_KEY dono khali hain — real LLM test nahi chala.")
         _write_skip("dono API keys khali hain (`.env` me set nahi).")
-        return 0
+        return 1 if glue_fail else 0
 
     providers = []
     if config.GROQ_API_KEY:
@@ -248,6 +264,9 @@ def main():
         f"- Kis model ne jawab diya: {models}\n"
         "- Har case me 8 sec gap; 429 par ek hi retry (60 sec baad). "
         "YouTube API call nahi hui — sirf LLM.\n"
+        f"- Roman glued-word unit checks: "
+        f"{'PASS' if glue_fail == 0 else f'{glue_fail} FAIL'} "
+        f"(bad {glue_bad} pakde, good {glue_good} par false-positive nahi).\n"
         "- Known cosmetic: contact-reply me LLM ka closing word (jaise "
         "'Dhanyavaad') kabhi-kabhi contact block se pehle aa jaata hai — "
         "facts aur links sahi hain.\n\n"
@@ -256,8 +275,8 @@ def main():
     )
     report_utils.write_section("STEP5", table)
 
-    print(f"\nTotal {total} | reply {got} | hard fail {hard_fail} | expect miss {expect_miss}")
-    return 0 if got == total and hard_fail == 0 else 1
+    print(f"\nTotal {total} | reply {got} | hard fail {hard_fail} | expect miss {expect_miss} | glued unit fail {glue_fail}")
+    return 0 if got == total and hard_fail == 0 and glue_fail == 0 else 1
 
 
 if __name__ == "__main__":
