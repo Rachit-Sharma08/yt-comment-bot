@@ -65,14 +65,35 @@ foran hota hai — pending post bhi nahi hote.
 
 ## 4. Autostart (login ke baad khud chal jaaye)
 
-### Option A — Startup folder (simple, recommended)
+### Option A — Startup folder (simple, recommended, bina admin permission)
 
-1. `Win + R` → `shell:startup` → Enter
-2. Us folder me `run_bot.bat` ka **shortcut** bana do
-   (ya `run_bot.bat` ka shortcut copy-paste kar do)
-3. Ab har login ke baad bot apne aap chalega
+Shortcut ka target `D:\yt-bot\run_bot.bat` aur Start-in `D:\yt-bot` rakho, window **minimized** (7) chalega taaki login pe kala cmd window na uche.
+
+PowerShell se (ek baar, admin permission nahi chahiye):
+
+```powershell
+$startup = [Environment]::GetFolderPath('Startup')
+$shortcutPath = Join-Path $startup 'YT Comment Bot.lnk'
+if (-not (Test-Path $shortcutPath)) {
+    $ws = New-Object -ComObject WScript.Shell
+    $s = $ws.CreateShortcut($shortcutPath)
+    $s.TargetPath = 'D:\yt-bot\run_bot.bat'
+    $s.WorkingDirectory = 'D:\yt-bot'
+    $s.WindowStyle = 7          :: 7 = minimized
+    $s.Description = 'YouTube Comment Bot - autostart on login'
+    $s.Save()
+}
+```
+
+Ya manually: `Win + R` → `shell:startup` → Enter → `run_bot.bat` ka shortcut banao → Right-click → Properties → Shortcut tab → "Run:" me **Minimized** chuno → "Start in:" me `D:\yt-bot` daalo.
+
+Ab har login ke baad bot apne aap chalega (`MODE=draft` default → koi YouTube post nahi).
 
 Chalane se pehle ek baar `run_bot.bat` double-click karke dekh lo ki sahi chalta hai.
+
+#### Shortcut hatana (autostart band karna)
+
+Startup folder (`shell:startup`) se `YT Comment Bot.lnk` delete kar do. Bot phir login pe apne aap nahi chalega; manually `run_bot.bat` se chala sakte ho.
 
 ### Option B — Task Scheduler (thoda advance, band kar bhi sakte ho)
 
