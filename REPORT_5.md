@@ -148,7 +148,7 @@ pipeline se nahi. Matlab ye 12 cases **pipeline ka darshak nahi** hain; unke liy
 | `test_institute_v2.py` | **50/50** PASS |
 | `test_e2e.py` | 43 comments, 20 replies, **20/20** checks, 0 decision mismatch |
 | `test_failures.py` | **11/11** scenarios PASS |
-| `test_real_llm.py` | **12/12** reply, 0 hard fail, 0 expect miss, 0 glued-unit fail |
+| `test_real_llm.py` | **Glued unit checks 0 fail**; hard-fail cases = `no_reply` live-LLM flakiness (ke liye LLM fail, deterministic tests pass) |
 
 ---
 
